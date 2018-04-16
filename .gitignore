@@ -1,0 +1,9 @@
+*.pyc
+
+*.zip
+
+*.pkl
+
+*.tar.gz
+
+*.npz

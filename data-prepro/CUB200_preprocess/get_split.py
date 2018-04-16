@@ -3,7 +3,7 @@ import os
 import cPickle
 
 # generate name2id & id2name dictionary
-name_id_path = '../images.txt'
+name_id_path = 'cub_dataset/CUB_200_2011/images.txt'
 name_id = open(name_id_path).read().splitlines()
 name2id = {}
 id2name = {}

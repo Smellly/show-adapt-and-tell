@@ -4,7 +4,10 @@ import time
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
-from coco_spice.pycocoevalcap.eval import COCOEvalCap
+import sys
+sys.path.append('./coco_spice/pycocoevalcap/')
+# from coco_spice.pycocoevalcap.eval import COCOEvalCap
+from eval import COCOEvalCap
 import pdb
 
 class G_pretrained():

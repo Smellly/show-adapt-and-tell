@@ -81,9 +81,11 @@ def extract_image(net, image_file):
 
 def split(split, net, feat_dict):
         print 'load ' + split 
-	img_dir = '/home/smelly/projects/ic_models/im2txt/im2txt/data/mscoco/raw-data/'
+	img_dir = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_dataset/CUB_200_2011'
 	img_path = os.path.join(img_dir, split)
-	img_list = os.listdir(img_path)
+	# img_list = os.listdir(img_path)
+        with open(os.path.join(img_dir, 'images.txt'), 'r') as f:
+            img_list = [x.split()[-1] for x in f.readlines()]
 	pool5_list = []
 	prob_list = []
         for k in tqdm(img_list):
@@ -105,7 +107,6 @@ if __name__ == '__main__':
 	net.name = os.path.splitext(os.path.basename(args.caffemodel))[0]
 
 	feat_dict = {}
-	split('train2014', net, feat_dict)
-	split('val2014', net, feat_dict)
-	pk.dump(feat_dict, open('./mscoco_data/coco_trainval_feat.pkl','w'))
+	split('images', net, feat_dict)
+	pk.dump(feat_dict, open('./cub_data/cub_trainval_feat.pkl','w'))
 

@@ -110,7 +110,7 @@ class mscoco():
         # train img feature
         self.dataset_name = 'cub'
         # target data
-        flickr_img_path = './cub/cub_train_resnet.pkl'
+        flickr_img_path = './cub/cub_trainval_feat.pkl'
         self.train_flickr_img_feat = utils.unpickle(flickr_img_path)
         self.num_train_images_filckr = len(self.train_flickr_img_feat.keys())
         self.train_img_idx = self.train_flickr_img_feat.keys()
@@ -119,7 +119,7 @@ class mscoco():
         self.flickr_caption_train = flickr_caption_train_data['tokenized_caption_list']
         self.flickr_caption_idx_train = flickr_caption_train_data['filename_list']
         self.num_flickr_train_caption = self.flickr_caption_train.shape[0]
-        flickr_img_path = './cub/cub_test_resnet.pkl'
+        flickr_img_path = './cub/cub_test_feat.pkl'
         self.test_flickr_img_feat = utils.unpickle(flickr_img_path)
         self.flickr_random_shuffle()    # shuffle the text data
 
@@ -127,9 +127,11 @@ class mscoco():
         img_feat_path = './data/coco_trainval_feat.pkl'
         self.img_feat = utils.unpickle(img_feat_path)
         train_meta_path = './data/K_annotation_train2014.pkl'
+        # train_meta_path = './data/K_train_annotation.pkl'
         train_meta = utils.unpickle(train_meta_path)
         self.filename2id = train_meta['filename2id']
 	val_meta_path = './data/K_annotation_val2014.pkl'
+	# val_meta_path = './data/K_val_annotation.pkl'
 	val_meta = utils.unpickle(val_meta_path)
 	self.id2filename = val_meta['id2filename']
         # train caption

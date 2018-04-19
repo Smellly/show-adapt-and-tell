@@ -81,15 +81,16 @@ def extract_image(net, image_file):
 
 def split(split, net, feat_dict):
         print 'load ' + split 
-	img_dir = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_dataset/CUB_200_2011'
-	img_path = os.path.join(img_dir, split)
+	img_dir = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_data/CUB_200_2011/images'
+        text_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/ECCV16_explanations_splits' 
+	# img_path = os.path.join(img_dir, split)
 	# img_list = os.listdir(img_path)
-        with open(os.path.join(img_dir, 'images.txt'), 'r') as f:
+        with open(os.path.join(text_path, split + '.txt'), 'r') as f:
             img_list = [x.split()[-1] for x in f.readlines()]
 	pool5_list = []
 	prob_list = []
         for k in tqdm(img_list):
-		blobs_out_pool5 = extract_image(net, os.path.join(img_path,k))
+		blobs_out_pool5 = extract_image(net, os.path.join(img_dir, k))
 		feat_dict[k.split('.')[0]] = np.array(blobs_out_pool5)
 
 	return feat_dict
@@ -107,6 +108,10 @@ if __name__ == '__main__':
 	net.name = os.path.splitext(os.path.basename(args.caffemodel))[0]
 
 	feat_dict = {}
-	split('images', net, feat_dict)
+	split('train_noCub', net, feat_dict)
+	split('val', net, feat_dict)
 	pk.dump(feat_dict, open('./cub_data/cub_trainval_feat.pkl','w'))
+	feat_dict = {}
+	split('test', net, feat_dict)
+	pk.dump(feat_dict, open('./cub_data/cub_test_feat.pkl','w'))
 

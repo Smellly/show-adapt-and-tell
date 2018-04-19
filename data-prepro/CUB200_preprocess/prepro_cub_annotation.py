@@ -40,8 +40,8 @@ for i in dataset['test_id']:
             caps.append(tmp)
 
         test_data[i] = caps
-# json.dump(test_data, open('cub_dataset/K_test_annotation.json', 'w'))
-pk.dump(test_data, open('cub_dataset/K_test_annotation.pkl', 'w'))
+json.dump(test_data, open('cub_data/K_test_annotation.json', 'w'))
+pk.dump(test_data, open('cub_data/K_test_annotation.pkl', 'w'))
 
 print("Processing train_data")
 for i in dataset['train_id']:
@@ -66,8 +66,8 @@ for i in dataset['train_id']:
         train_data[i] = caps
 print 'number of skip train data: ' + str(skip_num)
 [u'info', u'images', u'licenses', u'type', u'annotations']
-# json.dump(test_data, open('cub_dataset/K_train_annotation.json', 'w'))
-pk.dump(train_data, open('cub_dataset/K_train_annotation.pkl', 'w'))
+json.dump(test_data, open('cub_data/K_train_annotation.json', 'w'))
+pk.dump(train_data, open('cub_data/K_train_annotation.pkl', 'w'))
 
 print("Processing val_data")
 for i in dataset['val_id']:
@@ -89,4 +89,5 @@ for i in dataset['val_id']:
             caps.append(tmp)
 
         val_data[i] = caps
-pk.dump(val_data, open('cub_dataset/K_val_annotation.pkl', 'w'))
+pk.dump(val_data, open('cub_data/K_val_annotation.pkl', 'w'))
+json.dump(test_data, open('cub_data/K_val_annotation.json', 'w'))

@@ -57,7 +57,9 @@ def main(_):
 	if FLAGS.G_is_pretrain:
 	    G_pretrained_model = G_pretrained(sess, dataset, conf=FLAGS)
 	    if FLAGS.is_train:
+                print('G_pretrained_model train')
 		G_pretrained_model.train()
+            print('G_pretrained_model evaluate')
 	    G_pretrained_model.evaluate('test', 0, )
 	if FLAGS.D_is_pretrain:
 	    negative_dataset = mscoco_negative(dataset, FLAGS)

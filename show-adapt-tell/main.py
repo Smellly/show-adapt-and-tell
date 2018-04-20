@@ -38,6 +38,7 @@ tf.app.flags.DEFINE_float('ss_max', 0.25, '0.05*5=0.25')
 
 FLAGS = flags.FLAGS
 pp = pprint.PrettyPrinter()
+
 def main(_):
     pp.pprint(flags.FLAGS.__flags)
 
@@ -60,7 +61,7 @@ def main(_):
                 print('G_pretrained_model train')
 		G_pretrained_model.train()
             print('G_pretrained_model evaluate')
-	    G_pretrained_model.evaluate('test', 0, )
+	    G_pretrained_model.evaluate('test', 0)
 	if FLAGS.D_is_pretrain:
 	    negative_dataset = mscoco_negative(dataset, FLAGS)
 	    D_pretrained_model = D_pretrained(sess, dataset, negative_dataset, info, conf=FLAGS)

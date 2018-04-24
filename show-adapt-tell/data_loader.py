@@ -3,7 +3,9 @@ import utils
 import os, re, json
 import pdb
 from tqdm import tqdm
-
+import sys
+sys.path.append('./coco_spice/pycocotools/')
+import coco
 
 def get_key(name):
     return re.split('\.', name)[0]
@@ -119,8 +121,8 @@ class mscoco():
         self.flickr_caption_train = flickr_caption_train_data['tokenized_caption_list']
         self.flickr_caption_idx_train = flickr_caption_train_data['filename_list']
         self.num_flickr_train_caption = self.flickr_caption_train.shape[0]
-        flickr_img_path = './cub/cub_test_feat.pkl'
-        self.test_flickr_img_feat = utils.unpickle(flickr_img_path)
+        flickr_testimg_path = './cub/cub_test_feat.pkl'
+        self.test_flickr_img_feat = utils.unpickle(flickr_testimg_path)
         self.flickr_random_shuffle()    # shuffle the text data
 
         # MSCOCO data

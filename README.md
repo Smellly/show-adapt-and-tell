@@ -40,7 +40,8 @@ If you find this code useful for your research, please cite
 ## Requirements
 
 - Python 2.7
-- [Tensoflow 0.12.1](https://www.tensorflow.org/versions/r0.12/get_started/os_setup)
+- -[Tensoflow 0.12.1](https://www.tensorflow.org/versions/r0.12/get_started/os_setup)-
+- [Tensorflow 1.4](https://www.tensorflow.org/versions/r1.4/)
 - [Caffe](https://github.com/BVLC/caffe)
 - OpenCV 2.4.9
 

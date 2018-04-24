@@ -12,6 +12,7 @@ import os, time
 import json
 import pdb
 import PIL
+import cPickle
 from tqdm import tqdm
 from PIL import Image
 import re
@@ -85,13 +86,16 @@ def split(split, net, feat_dict):
         text_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/ECCV16_explanations_splits' 
 	# img_path = os.path.join(img_dir, split)
 	# img_list = os.listdir(img_path)
+        with open('/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/name2id.pkl', 'rb') as f:
+            name2id = cPickle.load(f)
         with open(os.path.join(text_path, split + '.txt'), 'r') as f:
             img_list = [x.split()[-1] for x in f.readlines()]
 	pool5_list = []
 	prob_list = []
         for k in tqdm(img_list):
 		blobs_out_pool5 = extract_image(net, os.path.join(img_dir, k))
-		feat_dict[k.split('.')[0]] = np.array(blobs_out_pool5)
+                # print(k, name2id[k])
+		feat_dict[name2id[k]] = np.array(blobs_out_pool5)
 
 	return feat_dict
 
@@ -111,7 +115,7 @@ if __name__ == '__main__':
 	split('train_noCub', net, feat_dict)
 	split('val', net, feat_dict)
 	pk.dump(feat_dict, open('./cub_data/cub_trainval_feat.pkl','w'))
-	feat_dict = {}
-	split('test', net, feat_dict)
-	pk.dump(feat_dict, open('./cub_data/cub_test_feat.pkl','w'))
+	test_feat_dict = {}
+	split('test', net, test_feat_dict)
+	pk.dump(test_feat_dict, open('./cub_data/cub_test_feat.pkl','w'))
 

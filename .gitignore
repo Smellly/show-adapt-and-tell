@@ -9,3 +9,12 @@
 *.npz
 
 *.swp
+
+logs
+
+checkpoint*
+
+data-prepro/MSCOCO_preprocess/resnet_model
+data-prepro/MSCOCO_preprocess/mscoco_data
+data-prepro/MSCOCO_preprocess/cub_data
+data-prepro/MSCOCO_preprocess/annotations

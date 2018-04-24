@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+'''
+// Author: Jay Smelly.
+// Last modify: 2018-04-20 10:59:19.
+// File name: pretrain_G.py
+//
+// Description: tensorflow 0.12.1
+'''
+
 from __future__ import division
 import os
 import time
@@ -106,8 +115,7 @@ class G_pretrained():
 		    sample_words = tf.argmax(logits, 1)
                     predict_words.append(sample_words)
 		   
-            # predict_words = tf.pack(predict_words)
-            predict_words = tf.stack(predict_words)
+            predict_words = tf.pack(predict_words)
             predict_words = tf.transpose(predict_words, [1,0])
 	return predict_words
 
@@ -143,11 +151,7 @@ class G_pretrained():
 			    lstm1_in = tf.nn.embedding_lookup(word_emb_W, start_token)
 			else:
 			    # schedule sampling
-			    # word = tf.select(self.coins[:,j-2], self.target_sentence[:,j-2], tf.stop_gradient(word_predict))
-			    word = tf.where(
-                                    self.coins[:,j-2], 
-                                    self.target_sentence[:,j-2], 
-                                    tf.stop_gradient(word_predict))
+			    word = tf.select(self.coins[:,j-2], self.target_sentence[:,j-2], tf.stop_gradient(word_predict))
                             lstm1_in = tf.nn.embedding_lookup(word_emb_W, word)
 
                 with tf.variable_scope("lstm"):
@@ -157,18 +161,14 @@ class G_pretrained():
 		if j > 0:
                     logits = tf.matmul(output, output_W)       		# B,D
 		    # calculate loss
-		    pretrained_loss_t = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                            logits=logits, 
-                            labels=self.target_sentence[:,j-1])
-		    # pretrained_loss_t = tf.reduce_sum(tf.mul(pretrained_loss_t, self.mask[:,j-1]))
-		    pretrained_loss_t = tf.reduce_sum(tf.multiply(pretrained_loss_t, self.mask[:,j-1]))
+		    pretrained_loss_t = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, self.target_sentence[:,j-1])
+		    pretrained_loss_t = tf.reduce_sum(tf.mul(pretrained_loss_t, self.mask[:,j-1]))
 		    self.pretrained_loss += pretrained_loss_t
 		    word_predict = tf.to_int32(tf.argmax(logits, 1))	# B		    
 
 
             self.pretrained_loss /= tf.reduce_sum(self.mask)
-            # self.pretrained_loss_sum = tf.scalar_summary("pretrained_loss", self.pretrained_loss)
-            self.pretrained_loss_sum = tf.summary.scalar("pretrained_loss", self.pretrained_loss)
+            self.pretrained_loss_sum = tf.scalar_summary("pretrained_loss", self.pretrained_loss)
 
     def train(self):
 	'''
@@ -302,9 +302,14 @@ class G_pretrained():
                     break
                 meteor_pd[str(int(image_id[j]))] = [{'image_id':str(int(image_id[j])), 'caption':samples[j][0]}]
                 meteor_id.append(str(int(image_id[j])))
-            #np.savez("result_%s"%str(count), meteor_pd=meteor_pd, meteor_id=meteor_id)
+            # np.savez("result_%s"%str(count), meteor_pd=meteor_pd, meteor_id=meteor_id)
+            # test_annotation is a json file
+            print("-------------------------------------------------------------------")
             scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
-            scorer.evaluate(verbose=True)		
+            print("-------------------------------------------------------------------")
+            # scorer.evaluate(verbose=True)
+            scorer.evaluate()
+            print("-------------------------------------------------------------------")
 
     def save(self, checkpoint_dir, step):
         model_name = "G_pretrained"
@@ -328,4 +333,5 @@ class G_pretrained():
             return True
         else:
             return False
+
 

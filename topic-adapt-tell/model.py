@@ -45,8 +45,8 @@ class SeqGAN():
         self.dict_size = dataset.dict_size
         self.max_words = dataset.max_words
         self.dataset = dataset
-	self.img_dims = self.dataset.img_dims
-        # self.img_dims = self.dataset.topic_dims
+	# self.img_dims = self.dataset.img_dims
+        self.img_dims = self.dataset.topic_dims
 	self.checkpoint_dir = conf.checkpoint_dir
 	self.lstm_steps = self.max_words+1
         self.START = self.dataset.word2ix[u'<BOS>']
@@ -65,15 +65,18 @@ class SeqGAN():
 
 	
 	# D placeholder
-	self.images = tf.placeholder('float32', [self.batch_size, self.img_dims])
+	# self.images = tf.placeholder('float32', [self.batch_size, self.img_dims])
+	self.images = tf.placeholder('int32', [self.batch_size, self.img_dims])
 	self.right_text = tf.placeholder('int32', [self.batch_size, self.max_words])
 	self.wrong_text = tf.placeholder('int32', [self.batch_size, self.max_words])
 	self.wrong_length = tf.placeholder('int32', [self.batch_size], name="wrong_length")
         self.right_length = tf.placeholder('int32', [self.batch_size], name="right_length")
 
 	# Domain Classider
-	self.src_images = tf.placeholder('float32', [self.batch_size, self.img_dims])
-	self.tgt_images = tf.placeholder('float32', [self.batch_size, self.img_dims])
+	# self.src_images = tf.placeholder('float32', [self.batch_size, self.img_dims])
+	# self.tgt_images = tf.placeholder('float32', [self.batch_size, self.img_dims])
+	self.src_images = tf.placeholder('int32', [self.batch_size, self.img_dims])
+	self.tgt_images = tf.placeholder('int32', [self.batch_size, self.img_dims])
 	self.src_text = tf.placeholder('int32', [self.batch_size, self.max_words])
 	self.tgt_text = tf.placeholder('int32', [self.batch_size, self.max_words])
 	# Optimizer
@@ -89,7 +92,8 @@ class SeqGAN():
         # Generator                                       #
         ###################################################
 	# G placeholder
-	state_list, predict_words_list_sample, log_probs_action_picked_list, self.rollout_mask, self.predict_mask = self.generator(name='G', reuse=False)
+	state_list, predict_words_list_sample, log_probs_action_picked_list, \
+                self.rollout_mask, self.predict_mask = self.generator(name='G', reuse=False)
         # tf.pack is deprecated by tf.stack
 	predict_words_sample = tf.stack(predict_words_list_sample)
         self.predict_words_sample = tf.transpose(predict_words_sample, [1,0]) # B,S
@@ -122,8 +126,11 @@ class SeqGAN():
 	images_tile_transpose = tf.tile(tf.expand_dims(images_tile_transpose, 0), [rollout_num,1,1,1])  #R,S,B,I
 	images_reshape = tf.reshape(images_tile_transpose, [-1, self.img_dims]) #R*S*B,I
 
-	D_rollout_vqa_softmax, D_rollout_logits_vqa = self.discriminator(rollout_size, images_reshape, rollout, rollout_length, name="D", reuse=False)
-	D_rollout_text, D_rollout_text_softmax, D_logits_rollout_text, l2_loss_rollout_text = self.text_discriminator(rollout, D_info, name="D_text", reuse=False)
+	D_rollout_vqa_softmax, D_rollout_logits_vqa = self.discriminator(
+                rollout_size, images_reshape, rollout, rollout_length, name="D", reuse=False)
+	D_rollout_text, D_rollout_text_softmax, D_logits_rollout_text, \
+                l2_loss_rollout_text = self.text_discriminator(
+                    rollout, D_info, name="D_text", reuse=False)
         # tf.mul is deprecated
 	reward = tf.multiply(D_rollout_vqa_softmax[:,0], D_rollout_text_softmax[:,0]) # S*B, 1
 
@@ -132,7 +139,9 @@ class SeqGAN():
 
         self.rollout_reward = tf.reshape(reward, [self.max_words, self.batch_size])      # S,B
         D_logits_rollout_reshape = tf.reshape(self.rollout_reward, [-1])
-        self.G_loss = (-1)*tf.reduce_sum(log_probs_action_picked_list*tf.stop_gradient(D_logits_rollout_reshape)) / tf.reduce_sum(tf.stop_gradient(self.predict_mask))
+        self.G_loss = (-1)*tf.reduce_sum(
+                log_probs_action_picked_list*tf.stop_gradient(
+                    D_logits_rollout_reshape)) / tf.reduce_sum(tf.stop_gradient(self.predict_mask))
 
 	# Teacher Forcing
         self.mask = tf.placeholder('float32', [self.batch_size, self.max_words])       # mask out the loss
@@ -197,9 +206,12 @@ class SeqGAN():
 	###################################################
 	# Text Domain Classifier
 	###################################################
-	D_src_text, D_src_text_softmax, D_logits_src_text, l2_loss_src_text = self.text_discriminator(self.src_text, D_info, name="D_text", reuse=True)
-	D_tgt_text, D_tgt_text_softmax, D_logits_tgt_text, l2_loss_tgt_text = self.text_discriminator(self.tgt_text, D_info, name="D_text", reuse=True)
-	D_fake_text, D_fake_text_softmax, D_logits_fake_text, l2_loss_fake_text = self.text_discriminator(self.predict_words_sample, D_info, name="D_text", reuse=True)
+	D_src_text, D_src_text_softmax, D_logits_src_text, l2_loss_src_text = self.text_discriminator(
+                self.src_text, D_info, name="D_text", reuse=True)
+	D_tgt_text, D_tgt_text_softmax, D_logits_tgt_text, l2_loss_tgt_text = self.text_discriminator(
+                self.tgt_text, D_info, name="D_text", reuse=True)
+	D_fake_text, D_fake_text_softmax, D_logits_fake_text, l2_loss_fake_text = self.text_discriminator(
+                self.predict_words_sample, D_info, name="D_text", reuse=True)
 
         #                       D_logits_src_text, tf.concat(1,(tf.zeros((self.batch_size,1)), tf.zeros((self.batch_size,1)),  
 	D_src_loss_text, D_src_acc_text = calculate_loss_and_acc_with_logits(
@@ -617,7 +629,8 @@ class SeqGAN():
 		    action_picked = tf.range(self.batch_size)*(self.dict_size) + tf.to_int32(sample_words)        # B
 		    # mask out the word beyond the <END>
                     # tf.mul is deprecated
-		    log_probs_action_picked = tf.multiply(tf.gather(tf.reshape(log_probs, [-1]), action_picked), tf.to_float(mask))
+		    log_probs_action_picked = tf.multiply(
+                            tf.gather(tf.reshape(log_probs, [-1]), action_picked), tf.to_float(mask))
                     log_probs_action_picked_list.append(log_probs_action_picked)
                     prev_mask = mask
                     mask_step = tf.not_equal(sample_words, self.END)    # B
@@ -640,16 +653,19 @@ class SeqGAN():
                 tf.get_variable_scope().reuse_variables()
             with tf.variable_scope("images"):
                 # "generator/images"
-                images_W = tf.get_variable("images_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
+                images_W = tf.get_variable(
+                        "images_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
             with tf.variable_scope("lstm"):
                 lstm1 = tf.nn.rnn_cell.LSTMCell(self.G_hidden_size, state_is_tuple=True)
             with tf.device("/cpu:0"), tf.variable_scope("embedding"):
                 # "generator/embedding"
-                word_emb_W = tf.get_variable("word_emb_W", [self.dict_size, self.G_hidden_size], "float32", random_uniform_init)
+                word_emb_W = tf.get_variable(
+                        "word_emb_W", [self.dict_size, self.G_hidden_size], "float32", random_uniform_init)
             with tf.variable_scope("output"):
                 # "generator/output"
                 # dict size minus 1 => remove <UNK>
-                output_W = tf.get_variable("output_W", [self.G_hidden_size, self.dict_size], "float32", random_uniform_init)
+                output_W = tf.get_variable(
+                        "output_W", [self.G_hidden_size, self.dict_size], "float32", random_uniform_init)
             start_token = tf.constant(self.START, dtype=tf.int32, shape=[self.batch_size])
             state = lstm1.zero_state(self.batch_size, 'float32')
             mask = tf.constant(True, "bool", [self.batch_size])
@@ -688,7 +704,8 @@ class SeqGAN():
                     action_picked = tf.range(self.batch_size)*(self.dict_size) + tf.to_int32(sample_words)        # B
                     # mask out the word beyond the <END>
                     # tf.mul is deprecated
-                    log_probs_action_picked = tf.multiply(tf.gather(tf.reshape(log_probs, [-1]), action_picked), tf.to_float(mask))
+                    log_probs_action_picked = tf.multiply(
+                            tf.gather(tf.reshape(log_probs, [-1]), action_picked), tf.to_float(mask))
                     log_probs_action_picked_list.append(log_probs_action_picked)
                     prev_mask = mask
                     mask_step = tf.not_equal(sample_words, self.END)    # B

@@ -112,7 +112,7 @@ class mscoco():
         # train img feature
         self.dataset_name = 'cub'
         # target data
-        flickr_img_path = './cub/cub_trainval_feat.pkl'
+        flickr_img_path = './cub/cub_trainval_feat.pkl' # todo topic
         self.train_flickr_img_feat = utils.unpickle(flickr_img_path)
         self.num_train_images_filckr = len(self.train_flickr_img_feat.keys())
         self.train_img_idx = self.train_flickr_img_feat.keys()
@@ -126,7 +126,7 @@ class mscoco():
         self.flickr_random_shuffle()    # shuffle the text data
 
         # MSCOCO data
-        img_feat_path = './data/coco_trainval_feat.pkl'
+        img_feat_path = './data/coco_trainval_feat.pkl' # todo topic
         self.img_feat = utils.unpickle(img_feat_path)
         train_meta_path = './data/K_annotation_train2014.pkl'
         # train_meta_path = './data/K_train_annotation.pkl'

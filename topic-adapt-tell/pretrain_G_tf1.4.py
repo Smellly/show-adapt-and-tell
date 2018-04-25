@@ -176,10 +176,8 @@ class G_pretrained():
 	with learning rate decay and schedule sampling
 	'''
 
-        print "---------------Generator pretrain with X Entropy-----------------"
         self.train_op = self.optim.minimize(self.pretrained_loss, global_step=self.global_step)
-        # self.writer = tf.train.SummaryWriter("./logs/G_pretrained", self.sess.graph)
-        self.writer = tf.summary.FileWriter("./logs/G_pretrained", self.sess.graph)
+        self.writer = tf.train.SummaryWriter("./logs/G_pretrained", self.sess.graph)
         tf.initialize_all_variables().run()
         self.saver = tf.train.Saver(var_list=self.G_params_dict, max_to_keep=30)
         try:
@@ -306,8 +304,7 @@ class G_pretrained():
                 meteor_id.append(str(int(image_id[j])))
             #np.savez("result_%s"%str(count), meteor_pd=meteor_pd, meteor_id=meteor_id)
             scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
-            # scorer.evaluate(verbose=True)		
-            scorer.evaluate()		
+            scorer.evaluate(verbose=True)		
 
     def save(self, checkpoint_dir, step):
         model_name = "G_pretrained"

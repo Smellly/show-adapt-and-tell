@@ -46,7 +46,6 @@ class SeqGAN():
         self.max_words = dataset.max_words
         self.dataset = dataset
 	self.img_dims = self.dataset.img_dims
-        # self.img_dims = self.dataset.topic_dims
 	self.checkpoint_dir = conf.checkpoint_dir
 	self.lstm_steps = self.max_words+1
         self.START = self.dataset.word2ix[u'<BOS>']
@@ -705,7 +704,7 @@ class SeqGAN():
 
 
     def train(self):
-        print "--------------------------model train---------------------------"
+
 	self.G_train_op = self.G_optim.minimize(self.G_loss, var_list=self.G_params)
 	self.G_hat_train_op = self.T_optim.minimize(self.teacher_loss, var_list=self.G_params)
 	self.D_train_op = self.D_optim.minimize(self.D_loss, var_list=self.D_params)
@@ -799,8 +798,7 @@ class SeqGAN():
             meteor_pd[str(int(image_id[j]))] = [{'image_id':str(int(image_id[j])), 'caption':samples[j][0]}]
             meteor_id.append(str(int(image_id[j])))
         scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
-	# scorer.evaluate(verbose=True)
-	scorer.evaluate()
+	scorer.evaluate(verbose=True)
         sample_dir = os.path.join("./SeqGAN_samples_sample", self.model_name)
         if not os.path.exists(sample_dir):
             os.makedirs(sample_dir)

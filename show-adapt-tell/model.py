@@ -48,6 +48,7 @@ class SeqGAN():
 	self.img_dims = self.dataset.img_dims
         # self.img_dims = self.dataset.topic_dims
 	self.checkpoint_dir = conf.checkpoint_dir
+        self.load_ckpt = conf.load_ckpt
 	self.lstm_steps = self.max_words+1
         self.START = self.dataset.word2ix[u'<BOS>']
         self.END = self.dataset.word2ix[u'<EOS>']
@@ -89,7 +90,8 @@ class SeqGAN():
         # Generator                                       #
         ###################################################
 	# G placeholder
-	state_list, predict_words_list_sample, log_probs_action_picked_list, self.rollout_mask, self.predict_mask = self.generator(name='G', reuse=False)
+	state_list, predict_words_list_sample, log_probs_action_picked_list, \
+                self.rollout_mask, self.predict_mask = self.generator(name='G', reuse=False)
         # tf.pack is deprecated by tf.stack
 	predict_words_sample = tf.stack(predict_words_list_sample)
         self.predict_words_sample = tf.transpose(predict_words_sample, [1,0]) # B,S
@@ -122,8 +124,10 @@ class SeqGAN():
 	images_tile_transpose = tf.tile(tf.expand_dims(images_tile_transpose, 0), [rollout_num,1,1,1])  #R,S,B,I
 	images_reshape = tf.reshape(images_tile_transpose, [-1, self.img_dims]) #R*S*B,I
 
-	D_rollout_vqa_softmax, D_rollout_logits_vqa = self.discriminator(rollout_size, images_reshape, rollout, rollout_length, name="D", reuse=False)
-	D_rollout_text, D_rollout_text_softmax, D_logits_rollout_text, l2_loss_rollout_text = self.text_discriminator(rollout, D_info, name="D_text", reuse=False)
+	D_rollout_vqa_softmax, D_rollout_logits_vqa = \
+                self.discriminator(rollout_size, images_reshape, rollout, rollout_length, name="D", reuse=False)
+	D_rollout_text, D_rollout_text_softmax, D_logits_rollout_text, \
+                l2_loss_rollout_text = self.text_discriminator(rollout, D_info, name="D_text", reuse=False)
         # tf.mul is deprecated
 	reward = tf.multiply(D_rollout_vqa_softmax[:,0], D_rollout_text_softmax[:,0]) # S*B, 1
 
@@ -720,9 +724,9 @@ class SeqGAN():
         self.summary_op = tf.summary.merge_all()
 	tf.initialize_all_variables().run()
 	if self.load_pretrain:
-	    print "[@] Load the pretrained model"
+            print "[@] Load the pretrained model from %s."%self.load_ckpt
 	    self.G_saver = tf.train.Saver(self.G_params_dict)
-	    self.G_saver.restore(self.sess, "./checkpoint/mscoco/G_pretrained/G_Pretrained-39000")
+	    self.G_saver.restore(self.sess, self.load_ckpt)
 
 	self.saver = tf.train.Saver(max_to_keep=self.max_to_keep)
 	count = 0

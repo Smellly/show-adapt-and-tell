@@ -28,6 +28,7 @@ class mscoco_negative():
                     self.neg_caption_train = npz["index"]
                 else:
                     self.neg_caption_train = np.concatenate((self.neg_caption_train, npz["index"]), 0)
+                #  print 'neg_caption_train:', self.neg_caption_train
                 # img_idx
                 for i in npz["img_name"]:
                     self.neg_img_filename_train.append(i+'.jpg')

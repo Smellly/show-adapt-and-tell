@@ -48,6 +48,7 @@ class SeqGAN():
 	# self.img_dims = self.dataset.img_dims
         self.img_dims = self.dataset.topic_dims
 	self.checkpoint_dir = conf.checkpoint_dir
+	self.load_ckpt = conf.ckpt
 	self.lstm_steps = self.max_words+1
         self.START = self.dataset.word2ix[u'<BOS>']
         self.END = self.dataset.word2ix[u'<EOS>']
@@ -737,9 +738,10 @@ class SeqGAN():
         self.summary_op = tf.summary.merge_all()
 	tf.initialize_all_variables().run()
 	if self.load_pretrain:
-	    print "[@] Load the pretrained model"
+	    print "[@] Load the pretrained model %s."%self.load_ckpt
 	    self.G_saver = tf.train.Saver(self.G_params_dict)
-	    self.G_saver.restore(self.sess, "./checkpoint/mscoco/G_pretrained/G_Pretrained-39000")
+	    # self.G_saver.restore(self.sess, "./checkpoint/mscoco/G_pretrained/G_Pretrained-39000")
+	    self.G_saver.restore(self.sess, self.load_ckpt)
 
 	self.saver = tf.train.Saver(max_to_keep=self.max_to_keep)
 	count = 0

@@ -49,7 +49,7 @@ P.S. Please clone the repository with the `--recursive` flag:
 
   ```Shell
   # Make sure to clone with --recursive
-  git clone --recursive https://github.com/tsenghungchen/show-adapt-and-tell.git
+  git clone --recursive https://github.com/Smellly/show-adapt-and-tell.git
   ```
   
 ## Data Preprocessing

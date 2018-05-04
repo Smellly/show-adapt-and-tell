@@ -120,14 +120,11 @@ def FindSynonyms(adjs, path):
 
 if __name__ == '__main__':
         cub_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_data/K_train_annotation.json'
-        mscoco_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_train_annotation.json'
-        mscoco_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_val_annotation.json'
-        # mscoco_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_test_annotation.json'
-        # captions_json = ReadJson(mscoco_path)
+        cub_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_data/K_val_annotation.json'
+        cub_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_data/K_test_annotation.json'
         captions_json = ReadJson(cub_path)
         new_json = genWordDict(captions_json)
-        # with open('mscoco_person_data/mscoco_person_val.json', 'w') as f:
-        with open('cub_data/K_train_annotation.json', 'w') as f:
+        with open('../cub/K_test_annotation.json', 'w') as f:
             json.dump(new_json, f)
         # with open('mscoco_person_words.pkl', 'w') as f:
         #     pkl.dump(words, f)

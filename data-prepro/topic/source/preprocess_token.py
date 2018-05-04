@@ -60,12 +60,12 @@ def clean_words(data):
     return dict, freq
 
 phase = sys.argv[1]
-data_path = './mscoco_person_data/K_annotation_'+phase+'2014.pkl'
+data_path = '../mscoco_person_data/K_annotation_'+phase+'2014.pkl'
 data = unpickle(data_path)
 thres = 5
 
 # create word2idx and idx2word
-if not os.path.isfile('./mscoco_person_data/dictionary_'+str(thres)+'.npz'):
+if not os.path.isfile('../mscoco_person_data/dictionary_'+str(thres)+'.npz'):
         # clean the words through the frequency
         if not os.path.isfile('K_cleaned_words.npz'):
                 dict, freq = clean_words(data)

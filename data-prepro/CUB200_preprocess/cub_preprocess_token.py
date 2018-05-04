@@ -62,7 +62,7 @@ def clean_words(data):
 
 
 phase = sys.argv[1]
-data_path = './cub_dataset/K_' + phase + '_annotation.pkl'
+data_path = './cub_datab/K_' + phase + '_annotation.pkl'
 data = unpickle(data_path)
 # print type(data), data.keys()
 
@@ -82,7 +82,7 @@ for i in split:
         caption_list.append(sen)
 
 # build dictionary
-if not os.path.isfile('cub_dataset/dictionary_'+str(thres)+'.npz'):
+if not os.path.isfile('./cub_data/dictionary_'+str(thres)+'.npz'):
     # pdb.set_trace()
     # clean the words through the frequency
     if not os.path.isfile('K_cleaned_words.npz'):
@@ -171,6 +171,6 @@ tokenized_caption_info['raw_caption_list'] = np.asarray(caption_list_new)
 print 'Number of sentence =', num_sentence
 print 'eliminate = ', eliminate
 
-with open('./cub_dataset/tokenized_'+phase+'_caption.pkl', 'w') as outfile:
+with open('./cub_data/tokenized_'+phase+'_caption.pkl', 'w') as outfile:
     pkl.dump(tokenized_caption_info, outfile)
 

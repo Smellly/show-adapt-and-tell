@@ -734,6 +734,7 @@ class SeqGAN():
 	G_count = 0
 	for idx in range(self.max_iter//250):
             self.save(self.checkpoint_dir, count)
+            print "Epoch %d:"%(self.max_iter//250)
             self.evaluate(count)
             for _ in tqdm(range(250)):
 		tgt_image_feature = self.dataset.flickr_sequential_sample(self.batch_size)

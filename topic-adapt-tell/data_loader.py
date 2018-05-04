@@ -1,7 +1,7 @@
 import numpy as np
 import utils
 import os, re, json
-import pdb
+# import pdb
 from tqdm import tqdm
 import sys
 sys.path.append('./coco_spice/pycocotools/')
@@ -84,7 +84,8 @@ class mscoco_negative():
         image_feature = np.zeros([num_data, self.img_dims])
         img_idx = []
         for i in range(num_data):
-            image_feature[i, :] = self.img_feat[get_key(img_filename[i])]
+            # image_feature[i, :] = self.img_feat[get_key(img_filename[i])]
+            image_feature[i, :] = self.img_feat[i]
             img_idx.append(get_key(img_filename[i]))
         return image_feature, caption, np.asarray(img_idx)
 
@@ -101,7 +102,8 @@ class mscoco_negative():
         image_feature = np.zeros([batch_size, self.img_dims])
         img_id = []
         for i in range(batch_size):
-            image_feature[i, :] = self.img_feat[get_key(img_filename[i])]
+            # image_feature[i, :] = self.img_feat[get_key(img_filename[i])]
+            image_feature[i, :] = self.img_feat[i]
             img_id.append(self.filename2id[img_filename[i]])
         self.current = end
         return image_feature, caption, np.asarray(img_id)
@@ -143,7 +145,7 @@ class mscoco():
         self.caption_idx_train = caption_train_data['filename_list']
 
         # topic data
-        self.img_feat = caption_train_data['tokenized_topic_list']
+        self.train_img_feat = caption_train_data['tokenized_topic_list']
 
         # val caption
         caption_test_data_path = './data/tokenized_test_caption.pkl'
@@ -171,23 +173,28 @@ class mscoco():
         self.num_test = self.caption_test.shape[0]
         # Load annotation
         self.source_test_annotation = json.load(open('./data/K_val_annotation.json'))
-        self.source_test_images = self.source_test_annotation.keys()
-        self.source_num_test_images = len(self.source_test_images)
+        # self.source_test_images = self.source_test_annotation.keys()
+        self.source_test_images = self.source_test_annotation
+        self.source_num_test_images = len(self.source_test_images) # a image with 5 caption and 5 themes
         self.test_annotation = json.load(open('./cub/K_test_annotation.json'))
-        self.test_images = self.test_annotation.keys()
-        self.num_test_images = len(self.test_images)
+        # self.test_images = self.test_annotation.keys()
+        self.test_images = self.test_annotation
+        self.num_test_images = len(self.test_images) # 
         self.random_shuffle()
         
     def random_shuffle(self):
         idx = range(self.num_train)
         np.random.shuffle(idx)
         self.caption_train = self.caption_train[idx]
+        self.train_img_feat = self.train_img_feat[idx]
         self.caption_idx_train = self.caption_idx_train[idx]
 
     def flickr_random_shuffle(self):
         idx = range(self.num_flickr_train_caption)
         np.random.shuffle(idx)
-        self.flickr_caption_train = self.flickr_caption_train[idx]
+        # caption_train is tokenized caption which type is numpy
+        self.flickr_caption_train = self.flickr_caption_train[idx] 
+        self.train_flickr_img_feat = self.train_flickr_img_feat[idx]
         self.flickr_caption_idx_train = self.flickr_caption_idx_train[idx]
 
     def get_train_annotation(self):
@@ -200,12 +207,11 @@ class mscoco():
         for i in range(num):
             filename = get_key(self.caption_idx_train[i])
             filenames.append(filename)
-            image_feature[i, :] = self.img_feat[filename]
+            image_feature[i, :] = self.train_img_feat[i]
 
         return image_feature, np.asarray(filenames)
 
     def get_test_for_eval(self):
-        
         image_feature = np.zeros([self.num_test_images, self.img_dims])
         image_id = np.zeros([self.num_test_images])
         for i in range(self.num_test_images):
@@ -215,12 +221,15 @@ class mscoco():
         return image_feature, image_id, self.test_annotation
 
     def get_source_test_for_eval(self):
-        
         image_feature = np.zeros([self.source_num_test_images, self.img_dims])
         image_id = np.zeros([self.source_num_test_images])
-        for i in range(self.source_num_test_images):
-            image_feature[i, :] = self.img_feat[get_key(self.id2filename[self.source_test_images[i]])]
-            image_id[i] = int(self.source_test_images[i])
+        # for i in range(self.source_num_test_images):
+            # image_feature[i, :] = self.img_feat[get_key(self.id2filename[self.source_test_images[i]])]
+            # image_id[i] = int(self.source_test_images[i])
+        for i in self.source_test_annotation:
+            # random choose one
+            image_feature[i, :] = np.random.choice(self.source_test_images[i])['themes']
+            image_id[i] = i
 
         return image_feature, image_id, self.source_test_annotation
 
@@ -250,7 +259,7 @@ class mscoco():
            
         image_feature = np.zeros([num_data, self.img_dims])
         for i in range(num_data):
-            image_feature[i, :] = self.img_feat[get_key(img_idx[i])]
+            image_feature[i, :] = self.train_img_feat[i]
         return image_feature, caption, img_idx
 
     def preprocess(self, caption, lstm_steps):
@@ -318,11 +327,11 @@ class mscoco():
         if self.current + batch_size < self.num_train:
             caption = self.caption_train[self.current:end, :]
             img_idx = self.caption_idx_train[self.current:end]
-            image_feature = self.img_feat[self.current:end, :]
+            image_feature = self.train_img_feat[self.current:end, :]
         else:
             caption = np.concatenate((self.caption_train[self.current:], self.caption_train[:end]), axis=0)
             img_idx = np.concatenate((self.caption_idx_train[self.current:], self.caption_idx_train[:end]), axis=0)
-            image_feature = np.concatenate((self.img_feat[self.current:], self.img_feat[:end]), axis=0)
+            image_feature = np.concatenate((self.train_img_feat[self.current:], self.train_img_feat[:end]), axis=0)
             self.random_shuffle()
 
         # image_feature = np.zeros([batch_size, self.img_dims])

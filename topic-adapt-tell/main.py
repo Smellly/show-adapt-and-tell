@@ -33,6 +33,7 @@ flags.DEFINE_boolean("is_train", True, "True for training, False for testing [Fa
 tf.app.flags.DEFINE_float('init_lr', 5e-4, '')  # follow IBM's paper
 tf.app.flags.DEFINE_float('lr_decay', 0.8, 'learning rate decay factor')
 tf.app.flags.DEFINE_float('lr_decay_every', 6600, 'every 3 epoch 3*2200')
+# ss -> schedule sampling
 tf.app.flags.DEFINE_float('ss_ascent', 0.05, 'schedule sampling')
 tf.app.flags.DEFINE_float('ss_ascent_every', 11000, 'every 5 epoch 5*2200')
 tf.app.flags.DEFINE_float('ss_max', 0.25, '0.05*5=0.25')

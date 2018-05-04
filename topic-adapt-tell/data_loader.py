@@ -126,21 +126,25 @@ class mscoco():
         self.flickr_random_shuffle()    # shuffle the text data
 
         # MSCOCO data
-        img_feat_path = './data/coco_trainval_feat.pkl' # todo topic
-        self.img_feat = utils.unpickle(img_feat_path)
+        # img_feat_path = './data/coco_trainval_feat.pkl' # todo topic
+        # self.img_feat = utils.unpickle(img_feat_path)
         train_meta_path = './data/K_annotation_train2014.pkl'
         # train_meta_path = './data/K_train_annotation.pkl'
         train_meta = utils.unpickle(train_meta_path)
         self.filename2id = train_meta['filename2id']
-	val_meta_path = './data/K_annotation_val2014.pkl'
-	# val_meta_path = './data/K_val_annotation.pkl'
-	val_meta = utils.unpickle(val_meta_path)
-	self.id2filename = val_meta['id2filename']
+        val_meta_path = './data/K_annotation_val2014.pkl'
+        # val_meta_path = './data/K_val_annotation.pkl'
+        val_meta = utils.unpickle(val_meta_path)
+        self.id2filename = val_meta['id2filename']
         # train caption
         caption_train_data_path = './data/tokenized_train_caption.pkl'
         caption_train_data = utils.unpickle(caption_train_data_path)
         self.caption_train = caption_train_data['tokenized_caption_list']
         self.caption_idx_train = caption_train_data['filename_list']
+
+        # topic data
+        self.img_feat = caption_train_data['tokenized_topic_list']
+
         # val caption
         caption_test_data_path = './data/tokenized_test_caption.pkl'
         caption_test_data = utils.unpickle(caption_test_data_path)
@@ -159,15 +163,16 @@ class mscoco():
         self.current_flickr_caption = 0
         self.current = 0
         self.max_words = self.caption_train.shape[1]
-        self.max_themes = 5 # hardcode
-        tmp = self.img_feat[self.img_feat.keys()[0]]
-        self.img_dims = tmp.shape[0] # 2048
+        self.max_themes = 7 # hardcode
+        # tmp = self.img_feat[self.img_feat.keys()[0]]
+        # self.img_dims = tmp.shape[0] # 2048
+        self.img_dims = conf.D_hidden_size
         self.num_train = self.caption_train.shape[0]
         self.num_test = self.caption_test.shape[0]
         # Load annotation
         self.source_test_annotation = json.load(open('./data/K_val_annotation.json'))
-	self.source_test_images = self.source_test_annotation.keys()
-	self.source_num_test_images = len(self.source_test_images)
+        self.source_test_images = self.source_test_annotation.keys()
+        self.source_num_test_images = len(self.source_test_images)
         self.test_annotation = json.load(open('./cub/K_test_annotation.json'))
         self.test_images = self.test_annotation.keys()
         self.num_test_images = len(self.test_images)
@@ -313,15 +318,17 @@ class mscoco():
         if self.current + batch_size < self.num_train:
             caption = self.caption_train[self.current:end, :]
             img_idx = self.caption_idx_train[self.current:end]
+            image_feature = self.img_feat[self.current:end, :]
         else:
             caption = np.concatenate((self.caption_train[self.current:], self.caption_train[:end]), axis=0)
             img_idx = np.concatenate((self.caption_idx_train[self.current:], self.caption_idx_train[:end]), axis=0)
+            image_feature = np.concatenate((self.img_feat[self.current:], self.img_feat[:end]), axis=0)
             self.random_shuffle()
 
-        image_feature = np.zeros([batch_size, self.img_dims])
+        # image_feature = np.zeros([batch_size, self.img_dims])
         img_id = []
         for i in range(batch_size):
-            image_feature[i, :] = self.img_feat[get_key(img_idx[i])]
+            # image_feature[i, :] = self.img_feat[get_key(img_idx[i])]
             img_id.append(self.filename2id[img_idx[i]])
         self.current = end
         return image_feature, caption, img_id

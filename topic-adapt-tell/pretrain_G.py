@@ -35,11 +35,14 @@ class G_pretrained():
         self.ss_max = conf.ss_max
         # train pretrained model -> no need to add START_TOKEN
         #                        -> need to add END_TOKEN
-        self.img_dims = self.dataset.img_dims
+        self.img_dims = self.dataset.max_themes
         self.lstm_steps = self.max_words+1
         self.theme_lstm_steps = dataset.max_themes+1
         self.global_step = tf.get_variable(
-                'global_step', [],initializer=tf.constant_initializer(0), trainable=False)
+                'global_step', 
+                [],
+                initializer=tf.constant_initializer(0), 
+                trainable=False)
         #self.optim = tf.train.AdamOptimizer(conf.learning_rate)
         self.checkpoint_dir = conf.checkpoint_dir
         self.START = self.dataset.word2ix[u'<BOS>']
@@ -48,9 +51,9 @@ class G_pretrained():
         self.NOT = self.dataset.word2ix[u'<NOT>']
 
         self.coins = tf.placeholder('bool', [self.batch_size, self.max_words-1])
-        # self.images_one = tf.placeholder('float32', [100, self.img_dims]) # image or topic
+        # self.images_one = tf.placeholder('float32', [100, self.img_dims]) # image
         # self.images = tf.placeholder('float32', [self.batch_size, self.img_dims])
-        self.images_one = tf.placeholder('int32', [100, self.img_dims]) # image or topic
+        self.images_one = tf.placeholder('int32', [100, self.img_dims]) # topic
         self.images = tf.placeholder('int32', [self.batch_size, self.img_dims])
         self.target_sentence = tf.placeholder('int32', [self.batch_size, self.max_words])
         self.mask = tf.placeholder('float32', [self.batch_size, self.max_words])       # mask out the loss
@@ -82,15 +85,7 @@ class G_pretrained():
                 #             "float32", 
                 #             random_uniform_init
                 #         )
-                theme_lstm_rand = tf.get_variables(
-                            "theme_lstm_in", 
-                            [batch_size, self.hidden_size], 
-                            "float32", 
-                            random_uniform_init
-                        )
-            # theme lstm is to fuse themes
-            with tf.variable_scope("theme_lstm"):
-                theme_lstm = tf.nn.rnn_cell.LSTMCell(self.hidden_size, state_is_tuple=True)
+                theme_embedding = tf.constant(0, dtype=tf.float32, shape=[self.batch_size, self.hidden_size])
             with tf.variable_scope("lstm"):
                 # WONT BE CREATED HERE
                 lstm1 = tf.nn.rnn_cell.LSTMCell(self.hidden_size, state_is_tuple=True)
@@ -105,27 +100,19 @@ class G_pretrained():
                         "output_W", [self.hidden_size, self.dict_size], "float32", random_uniform_init)
 
             start_token = tf.constant(self.START, dtype=tf.int32, shape=[batch_size])
-            state = lstm1.zero_state(batch_size, 'float32')
-            for j in range(self.theme_lstm_steps):
-                tf.get_variable_scope().reuse_variables()
-                if j == 0:
-                    theme_lstm_in = theme_lstm_rand
-                if j == 1:
-                    with tf.device("/cpu:0"):
-                        theme_lsmt_in = tf.nn.embedding_lookup(word_emb_W, start_token)
-                else:
-                    with tf.device("/cpu:0"):
-                        theme_lsmt_in = tf.nn.embedding_lookup(word_emb_W, self.images_one) # 
-                with tf.variable_scope("lstm"):
-                    # "generator/theme-lstm"
-                    output, state = lstm1(lstm1_in, state, scope=tf.get_variable_scope())     # output: B,H
-                        
+            state = lstm1.zero_state(batch_size, 'float32') 
+            
+            # for j in range(self.theme_lstm_steps): 
+            # tf.get_variable_scope().reuse_variables()
+                    
             for j in range(self.lstm_steps):
                 tf.get_variable_scope().reuse_variables()
                 if j == 0:
                     # images_emb = tf.matmul(self.images_one, images_W)       # B,H
                     # lstm1_in = images_emb
-                    lstm1_in = state
+                    with tf.device("/cpu:0"):
+                        theme_in = tf.nn.embedding_lookup(word_emb_W, self.images_one) # 
+                    lstm1_in = tf.reduce_sum(theme_in, 1)
                 elif j == 1:
                     with tf.device("/cpu:0"):
                         lstm1_in = tf.nn.embedding_lookup(word_emb_W, start_token)
@@ -160,15 +147,7 @@ class G_pretrained():
                 #             "float32", 
                 #             random_uniform_init
                 #         )
-                theme_lstm_rand = tf.get_variables(
-                            "theme_lstm_in", 
-                            [batch_size, self.hidden_size], 
-                            "float32", 
-                            random_uniform_init
-                        )
-            # theme lstm is to fuse themes
-            with tf.variable_scope("theme_lstm"):
-                theme_lstm = tf.nn.rnn_cell.LSTMCell(self.hidden_size, state_is_tuple=True)
+                theme_embedding = tf.constant(0, dtype=tf.float32, shape=[self.batch_size, self.hidden_size])
             with tf.variable_scope("lstm"):
                 # "generator/lstm"
                 lstm1 = tf.nn.rnn_cell.LSTMCell(self.hidden_size, state_is_tuple=True)
@@ -185,38 +164,17 @@ class G_pretrained():
             start_token = tf.constant(self.START, dtype=tf.int32, shape=[self.batch_size])
             state = lstm1.zero_state(self.batch_size, 'float32')
             self.pretrained_loss = 0.
-            for j in range(self.theme_lstm_steps):
-                if j == 0:
-                    theme_lstm_in = theme_lstm_rand
-                else:
-                    tf.get_variable_scope().reuse_variables()
-                    with tf.device("/cpu:0"):
-                        if j == 1:
-                            # <BOS>
-                            theme_lstm_in = tf.nn.embedding_lookup(word_emb_W, start_token)
-                        else:
-                            # word = tf.where(
-                            #             self.coins[:, j-2].
-                            #             self.garget_sentence[:, j-2],
-                            #             tf.stop_gradient(word_predict)
-                            #         )
-                            theme_lstm_in = tf.nn.embedding_lookup(word_emb_W, images)
-                with tf.variable_scope("lstm"):
-                    # "generator/lstm"
-                    output, state = lstm1(lstm1_in, state, scope=tf.get_variable_scope())     # output: B,H
-                # if j > 0:
-                #     logits = tf.matmul(output, output_W)                      # B,D
-                #     # calculate loss
-                #     theme_pretrained_loss_t = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                #             logits=logits, 
-                #             labels=self.target_sentence[:,j-1])
-                #     # pretrained_loss_t = tf.reduce_sum(tf.mul(pretrained_loss_t, self.mask[:,j-1]))
-                #     pretrained_loss_t = tf.reduce_sum(tf.multiply(pretrained_loss_t, self.mask[:,j-1]))
+            # for j in range(self.theme_lstm_steps):
+            # tf.get_variable_scope().reuse_variables()
+            # print('image shape:', self.images.shape)
             for j in range(self.lstm_steps):
                 if j == 0:
                     # images_emb = tf.matmul(self.images, images_W)     # B,H
                     # lstm1_in = images_emb
-                    lstm_in = state
+                    with tf.variable_scope("images"):
+                        with tf.device("/cpu:0"):
+                            theme_in = tf.nn.embedding_lookup(word_emb_W, self.images)
+                    lstm1_in = tf.reduce_sum(theme_in, 1)
                 else:
                     tf.get_variable_scope().reuse_variables()
                     with tf.device("/cpu:0"):
@@ -255,9 +213,10 @@ class G_pretrained():
         Train a caption generator with XE
         with learning rate decay and schedule sampling
         '''
-
+        print "---------------------------------Pretrain_G train----------------------------------------------"
         self.train_op = self.optim.minimize(self.pretrained_loss, global_step=self.global_step)
-        self.writer = tf.train.SummaryWriter("./logs/G_pretrained", self.sess.graph)
+        # self.writer = tf.train.SummaryWriter("./logs/G_pretrained", self.sess.graph)
+        self.writer = tf.summary.FileWriter("./logs/G_pretrained", self.sess.graph)
         tf.initialize_all_variables().run()
         self.saver = tf.train.Saver(var_list=self.G_params_dict, max_to_keep=30)
         try:
@@ -270,15 +229,18 @@ class G_pretrained():
         self.current_ss = 0.
         self.tr_count = 0
         for idx in range(self.max_iter//3000):
+            print "Epoch %d"%(self.max_iter//3000)
             print "Evaluate source test set..."
             self.evaluate('test', self.tr_count)
             print "Evaluate target test set..."
             self.evaluate('target_test', self.tr_count)
+            print "Evaluate train max"
             self.evaluate('train', self.tr_count, eval_algo='max')
+            print "Evaluate train sample"
             self.evaluate('train', self.tr_count, eval_algo='sample')
             self.save(self.checkpoint_dir, self.tr_count)
             for k in tqdm(range(3000)):
-                tgt_text = self.dataset.flickr_caption_sequential_sample(self.batch_size)
+                # tgt_text = self.dataset.flickr_caption_sequential_sample(self.batch_size)
                 image_feature, target, img_idx = self.dataset.sequential_sample(self.batch_size)
 #               dummy_feature = np.zeros(image_feature.shape)
                 nonENDs = np.array(map(lambda x: (x != self.NOT).sum(), target))
@@ -293,7 +255,7 @@ class G_pretrained():
                 # schedule sampling condition
                 coins = np.zeros([self.batch_size, self.max_words-1])   
                 for (x,y), value in np.ndenumerate(coins):
-                    if y==0:
+                    if y == 0:
                         coins[x][y] = True
                     elif np.random.rand() < self.current_ss:
                         coins[x][y] = False
@@ -308,17 +270,17 @@ class G_pretrained():
                                     self.mask: mask, 
                                     self.coins: coins
                                 })
-#               _, dummy_loss, _ = self.sess.run([self.train_op, self.pretrained_loss, self.pretrained_loss_sum],{
-#                       self.images: dummy_feature, 
-#                       self.target_sentence: tgt_text,
-#                       self.mask: tgt_mask, 
-#                       self.coins: coins
-#                       })
+                # _, dummy_loss, _ = self.sess.run([self.train_op, self.pretrained_loss, self.pretrained_loss_sum],{
+                #         self.images: dummy_feature, 
+                #         self.target_sentence: tgt_text,
+                #         self.mask: tgt_mask, 
+                #         self.coins: coins
+                #         })
         
                 self.writer.add_summary(summary_str, self.tr_count)
                 self.tr_count += 1
 
-                #if k%1000 == 0:
+                # if k%1000 == 0:
                 #    print " [*] Iter {}, lr={}, ss={}, loss={}".format(self.tr_count, self.current_lr, self.current_ss, loss)
 
                 if idx == 0 and k != 0  and k%1000 == 0:

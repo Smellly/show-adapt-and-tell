@@ -62,8 +62,8 @@ def clean_words(data):
 
 
 phase = sys.argv[1]
-data_path = './cub_datab/K_' + phase + '_annotation.pkl'
-data = unpickle(data_path)
+data_path = './cub_datab/K_' + phase + '_annotation.json'
+data = load_json(data_path)
 # print type(data), data.keys()
 
 id2name = unpickle('id2name.pkl')

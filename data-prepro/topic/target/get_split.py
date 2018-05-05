@@ -34,13 +34,17 @@ for name in tqdm(name2id):
     id2topic[idd] = []
     for sen in id2caption[idd]:
         topic = []
+        # print idd, sen
         for word, pos in pos_tag(word_tokenize(sen)):
+            # print word, pos
             if pos.startswith('N') or pos.startswith('V'):
                 topic.append(word)
-        if not topic:
-            id2topic[idd].append(topic) 
+        # print topic
+        if topic:
+            id2topic[idd].append(topic)
 
 cPickle.dump(id2caption, open('id2caption.pkl', 'wb'))
+cPickle.dump(id2topic, open('id2topic.pkl', 'wb'))
 
 # generate split dictionary
 train_path = '../../CUB200_preprocess/ECCV16_explanations_splits/train_noCub.txt'

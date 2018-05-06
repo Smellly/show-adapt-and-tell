@@ -35,7 +35,7 @@ class G_pretrained():
         self.ss_max = conf.ss_max
         # train pretrained model -> no need to add START_TOKEN
         #                        -> need to add END_TOKEN
-        self.img_dims = self.dataset.max_themes
+        self.img_dims = self.dataset.max_themes + 1
         self.lstm_steps = self.max_words+1
         self.theme_lstm_steps = dataset.max_themes+1
         self.global_step = tf.get_variable(
@@ -320,6 +320,9 @@ class G_pretrained():
             prediction = self._predict_words_sample
         for i in range(num_eval//100):
             image_feature_one = image_feature[i*100:(i+1)*100]
+            print 'image_feature_one:', image_feature_one
+            print 'images_one shape:', self.images_one.shape
+            print 'img_feat_one shape:', image_feature_one.shape
             predict_words = self.sess.run(prediction,{
                                 self.images_one: image_feature_one,
                                 })

@@ -60,14 +60,15 @@ def clean_words(data):
 
     return d, freq
 
-
 phase = sys.argv[1]
-data_path = '../cub/K_' + phase + '_annotation.pkl'
-data = unpickle(data_path)
+data_path = '../cub/K_' + phase + '_annotation.json'
+# data = unpickle(data_path)
+data = load_json(data_path)
 # print type(data), data.keys()
 
 id2name = unpickle('id2name.pkl')
 id2caption = unpickle('id2caption.pkl')
+id2topic = unpickle('id2topic.pkl')
 splits = unpickle('splits.pkl')
 split = splits[phase + '_id']
 thres = 5
@@ -75,12 +76,17 @@ thres = 5
 filename_list = []
 caption_list = []
 topic_list = []
+topic_list = []
 img_id_list = []
 for i in split:
     for sen in id2caption[i]:
         img_id_list.append(i)
         filename_list.append(id2name[i])
         caption_list.append(sen)
+    for tpc in id2topic[i]:
+        topic_list.append(tpc)
+
+# print topic_list
 
 # build dictionary
 if not os.path.isfile('../cub/dictionary_'+str(thres)+'.npz'):
@@ -90,7 +96,7 @@ if not os.path.isfile('../cub/dictionary_'+str(thres)+'.npz'):
 	d, freq = clean_words(data)
     else:
         words = np.load('K_cleaned_words.npz')
-        d = words['d'].item(0)
+        d = words['dict'].item(0)
         freq = words['freq'].item(0)
 
     idx2word = {}
@@ -113,9 +119,9 @@ if not os.path.isfile('../cub/dictionary_'+str(thres)+'.npz'):
 
     print 'Threshold of word fequency =', thres
     print 'Total words in the dictionary =', len(word2idx.keys())
-    np.savez('cub_dataset/dictionary_'+str(thres), word2idx=word2idx, idx2word=idx2word)
+    np.savez('../cub/dictionary_'+str(thres), word2idx=word2idx, idx2word=idx2word)
 else:
-    tem = np.load('cub_dataset/dictionary_'+str(thres)+'.npz')
+    tem = np.load('../cub/dictionary_'+str(thres)+'.npz')
     word2idx = tem['word2idx'].item(0)
     idx2word = tem['idx2word'].item(0)
 
@@ -129,14 +135,14 @@ caption_list_new = []
 topic_list_new = []
 filename_list_new = []
 img_id_list_new = []
-caption_length = []
-topic_length = []
+# caption_length = []
+# topic_length = []
 
 for k in tqdm(range(len(caption_list))):
     sen = caption_list[k]
     img_id = img_id_list[k]
     filename = filename_list[k]
-    topics = 
+    topics = topic_list[k]
     # skip the no image description
     words = re.split(' ', sen)
     # pop the last u'.'
@@ -144,6 +150,7 @@ for k in tqdm(range(len(caption_list))):
     valid = True
     tokenized_sent = np.ones([31],dtype=int) * word2idx[u'<NOT>']  # initialize as <NOT>
     tokenized_topic = np.zeros([7+1], dtype=int) # max topix word is 7
+    newtopic = []
     if len(topics) < 7+1:
         for ind, topic in enumerate(topics):
             try:
@@ -164,9 +171,9 @@ for k in tqdm(range(len(caption_list))):
         if valid:
             tokenized_topic[count] = (word2idx["<EOS>"])
             topic_list.append(newtopic)
-            length = np.sum((tokenized_sent!=0)+0)
+            # length = np.sum((tokenized_sent!=0)+0)
             tokenized_topic_list.append(tokenized_topic)
-            topic_length.append(length)
+            # topic_length.append(length)
     if len(words) <= 30:
         for word in words:
             try:
@@ -193,13 +200,15 @@ for k in tqdm(range(len(caption_list))):
             eliminate += 1  
 tokenized_caption_info = {}
 tokenized_caption_info['tokenized_caption_list'] = np.asarray(tokenized_caption_list)
+tokenized_caption_info['tokenized_topic_list'] = np.asarray(tokenized_topic_list)
 tokenized_caption_info['filename_list'] = np.asarray(filename_list_new)
 tokenized_caption_info['img_id_list'] = np.asarray(img_id_list_new)
 tokenized_caption_info['raw_caption_list'] = np.asarray(caption_list_new)
+tokenized_caption_info['raw_topic_list'] = np.asarray(topic_list_new)
 
 print 'Number of sentence =', num_sentence
 print 'eliminate = ', eliminate
 
-with open('./cub_dataset/tokenized_'+phase+'_caption.pkl', 'w') as outfile:
+with open('../cub/tokenized_'+phase+'_caption.pkl', 'w') as outfile:
     pkl.dump(tokenized_caption_info, outfile)
 

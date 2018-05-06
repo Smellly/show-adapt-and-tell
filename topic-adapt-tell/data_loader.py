@@ -11,7 +11,6 @@ def get_key(name):
     return re.split('\.', name)[0]
 
 class mscoco_negative():
-
     def __init__(self, dataset, conf):
         self.dataset_name = 'mscoco_negative'
         self.batch_size = conf.batch_size
@@ -109,22 +108,23 @@ class mscoco_negative():
         return image_feature, caption, np.asarray(img_id)
 
 class mscoco():
-
     def __init__(self, conf=None):
         # train img feature
         self.dataset_name = 'cub'
         # target data
-        flickr_img_path = './cub/cub_trainval_feat.pkl' # todo topic
-        self.train_flickr_img_feat = utils.unpickle(flickr_img_path)
-        self.num_train_images_filckr = len(self.train_flickr_img_feat.keys())
-        self.train_img_idx = self.train_flickr_img_feat.keys()
+        # flickr_img_path = './cub/cub_trainval_feat.pkl' # todo topic
+        # self.num_train_images_filckr = len(self.train_flickr_img_feat.keys())
+        # self.train_img_idx = self.train_flickr_img_feat.keys()
         flickr_caption_train_data_path = './cub/tokenized_train_caption.pkl'
         flickr_caption_train_data = utils.unpickle(flickr_caption_train_data_path)
         self.flickr_caption_train = flickr_caption_train_data['tokenized_caption_list']
+        self.train_flickr_img_feat = flickr_caption_train_data['tokenized_topic_list']
+        self.num_train_images_filckr = len(self.train_flickr_img_feat)
         self.flickr_caption_idx_train = flickr_caption_train_data['filename_list']
         self.num_flickr_train_caption = self.flickr_caption_train.shape[0]
-        flickr_testimg_path = './cub/cub_test_feat.pkl'
-        self.test_flickr_img_feat = utils.unpickle(flickr_testimg_path)
+        # flickr_testimg_path = './cub/cub_test_feat.pkl'
+        flickr_testimg_path = './cub/tokenized_test_caption.pkl'
+        self.test_flickr_img_feat = utils.unpickle(flickr_testimg_path)['tokenized_topic_list']
         self.flickr_random_shuffle()    # shuffle the text data
 
         # MSCOCO data
@@ -172,14 +172,21 @@ class mscoco():
         self.num_train = self.caption_train.shape[0]
         self.num_test = self.caption_test.shape[0]
         # Load annotation
-        self.source_test_annotation = json.load(open('./data/K_val_annotation.json'))
+        # self.source_test_annotation = json.load(open('./data/K_val_annotation.json'))
         # self.source_test_images = self.source_test_annotation.keys()
-        self.source_test_images = self.source_test_annotation
-        self.source_num_test_images = len(self.source_test_images) # a image with 5 caption and 5 themes
-        self.test_annotation = json.load(open('./cub/K_test_annotation.json'))
-        # self.test_images = self.test_annotation.keys()
-        self.test_images = self.test_annotation
-        self.num_test_images = len(self.test_images) # 
+        tmp = utils.unpickle('./data/K_annotation_val2014.pkl')
+        self.source_test_annotation = tmp['caption_entity']
+        self.source_test_images = tmp['topic_entity']
+        self.source_test_image_filename = tmp['file_name']
+        self.source_test_filename2id = tmp['filename2id']
+        # a image with 5 caption and 5 themes
+        self.source_num_test_images = len(self.source_test_images)
+        self.target_test_annotation = json.load(open('./cub/K_test_annotation.json'))
+        # self.test_images = self.target_test_annotation.keys()
+        tmp = utils.unpickle('./cub/tokenized_test_caption.pkl')
+        self.target_test_images = tmp['tokenized_topic_list'] # np array
+        self.target_test_image_id = tmp['img_id_list'] # np array
+        self.num_target_test_images = len(self.target_test_images) # 
         self.random_shuffle()
         
     def random_shuffle(self):
@@ -211,27 +218,37 @@ class mscoco():
 
         return image_feature, np.asarray(filenames)
 
+    # cub
     def get_test_for_eval(self):
-        image_feature = np.zeros([self.num_test_images, self.img_dims])
-        image_id = np.zeros([self.num_test_images])
-        for i in range(self.num_test_images):
-            image_feature[i, :] = self.test_flickr_img_feat[self.test_images[i]]
-            image_id[i] = int(self.test_images[i])
+        # image_feature = np.zeros([self.num_target_test_images, self.img_dims])
+        image_id = np.zeros([self.num_target_test_images])
+        # for i in range(self.num_target_test_images):
+        #     image_feature[i, :] = self.test_flickr_img_feat[self.target_test_images[i]]
+        #     image_id[i] = int(self.target_test_images[i])
+        return self.target_test_images, self.target_test_image_id, self.target_test_annotation
 
-        return image_feature, image_id, self.test_annotation
-
+    # mscoco
     def get_source_test_for_eval(self):
-        image_feature = np.zeros([self.source_num_test_images, self.img_dims])
+        image_feature = np.zeros([self.source_num_test_images, self.max_themes])
         image_id = np.zeros([self.source_num_test_images])
         # for i in range(self.source_num_test_images):
             # image_feature[i, :] = self.img_feat[get_key(self.id2filename[self.source_test_images[i]])]
             # image_id[i] = int(self.source_test_images[i])
-        for i in self.source_test_annotation:
-            # random choose one
-            image_feature[i, :] = np.random.choice(self.source_test_images[i])['themes']
-            image_id[i] = i
-
-        return image_feature, image_id, self.source_test_annotation
+        for ind, i in enumerate(self.source_test_image_filename):
+            image_id[ind] = int(self.source_test_filename2id[i])
+            tmp = []
+            for x in self.source_test_images[ind]:
+                if x in self.word2ix:
+                    tmp.append(self.word2ix[x])
+                if len(tmp) == self.max_themes:
+                    break
+            image_feature[ind, :] = np.pad(
+                    np.array(tmp),
+                    (0, self.max_themes-len(tmp)),
+                    'constant',
+                    constant_values=(0, 0)
+                    )
+        return self.source_test_images, image_id, self.source_test_annotation
 
     def get_wrong_text(self, num_data, phase='train'):
         assert phase=='train'

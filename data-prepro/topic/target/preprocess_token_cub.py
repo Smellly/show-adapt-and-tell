@@ -61,6 +61,7 @@ def clean_words(data):
     return d, freq
 
 phase = sys.argv[1]
+print 'phase : ', phase
 data_path = '../cub/K_' + phase + '_annotation.json'
 # data = unpickle(data_path)
 data = load_json(data_path)
@@ -124,7 +125,7 @@ else:
     tem = np.load('../cub/dictionary_'+str(thres)+'.npz')
     word2idx = tem['word2idx'].item(0)
     idx2word = tem['idx2word'].item(0)
-
+    print 'Total words in the dictionary =', len(word2idx.keys())
 
 # generate tokenized data
 num_sentence = 0
@@ -149,31 +150,8 @@ for k in tqdm(range(len(caption_list))):
     count = 0
     valid = True
     tokenized_sent = np.ones([31],dtype=int) * word2idx[u'<NOT>']  # initialize as <NOT>
-    tokenized_topic = np.zeros([7+1], dtype=int) # max topix word is 7
+    tokenized_topic = np.zeros([7], dtype=int) # max topix word is 7
     newtopic = []
-    if len(topics) < 7+1:
-        for ind, topic in enumerate(topics):
-            try:
-                topic = topic.lower()
-                for p in string.punctuation:
-                    if p in topic:
-                        topic = topic.replace(p,'')
-                idx = int(word2idx[topic])
-                tokenized_topic[ind] = idx
-                newtopic.append(topic)
-            except KeyError:
-                    # if contain <UNK> then drop the sentence
-                    if phase == 'train':
-                        valid = False
-                        break
-                    else:
-                        tokenized_topic[ind] = int(word2idx[u'<UNK>'])
-        if valid:
-            tokenized_topic[count] = (word2idx["<EOS>"])
-            topic_list.append(newtopic)
-            # length = np.sum((tokenized_sent!=0)+0)
-            tokenized_topic_list.append(tokenized_topic)
-            # topic_length.append(length)
     if len(words) <= 30:
         for word in words:
             try:
@@ -198,6 +176,32 @@ for k in tqdm(range(len(caption_list))):
             num_sentence += 1
         else:
             eliminate += 1  
+    if valid:
+        for ind, topic in enumerate(topics):
+            if ind == 7:
+                break
+            try:
+                topic = topic.lower()
+                for p in string.punctuation:
+                    if p in topic:
+                        topic = topic.replace(p,'')
+                idx = int(word2idx[topic])
+                tokenized_topic[ind] = idx
+                newtopic.append(topic)
+            except KeyError:
+                    # if contain <UNK> then drop the sentence
+                    if phase == 'train':
+                        valid = False
+                        break
+                    else:
+                        tokenized_topic[ind] = int(word2idx[u'<UNK>'])
+        if valid:
+            # tokenized_topic[count] = (word2idx["<EOS>"])
+            topic_list.append(newtopic)
+            # length = np.sum((tokenized_sent!=0)+0)
+            tokenized_topic_list.append(tokenized_topic)
+            # topic_length.append(length)
+
 tokenized_caption_info = {}
 tokenized_caption_info['tokenized_caption_list'] = np.asarray(tokenized_caption_list)
 tokenized_caption_info['tokenized_topic_list'] = np.asarray(tokenized_topic_list)

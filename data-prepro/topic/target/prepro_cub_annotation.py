@@ -96,7 +96,7 @@ for i in dataset['train_id']:
         # print i, type(i)
         train_data[i] = caps
 print 'number of skip train data: ' + str(skip_num)
-[u'info', u'images', u'licenses', u'type', u'annotations']
+# [u'info', u'images', u'licenses', u'type', u'annotations']
 print 'dump %d in train_data'%len(train_data)
 json.dump(test_data, open('../cub/K_train_annotation.json', 'w'))
 # pk.dump(train_data, open('../cub/K_train_annotation.pkl', 'w'))

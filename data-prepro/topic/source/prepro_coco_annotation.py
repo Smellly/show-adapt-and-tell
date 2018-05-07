@@ -123,12 +123,12 @@ print 'number of skip train data: ' + str(skip_num)
 # [u'info', u'images', u'licenses', u'type', u'annotations']
 
 #json.dump(val_data, open('K_val_train.json', 'w'))
-json.dump(val_data, open('./mscoco_data/K_val_annotation.json', 'w'))
-json.dump(test_data, open('./mscoco_data/K_test_annotation.json', 'w'))
-json.dump(train_data_, open('./mscoco_data/K_train_annotation.json', 'w'))
+json.dump(val_data, open('../mscoco_person_data/K_val_annotation.json', 'w'))
+json.dump(test_data, open('../mscoco_person_data/K_test_annotation.json', 'w'))
+json.dump(train_data_, open('../mscoco_person_data/K_train_annotation.json', 'w'))
 
 #json.dump(train_data, open('K_train_raw.json', 'w'))
 
-json.dump(val_dataset, open('./mscoco_data/K_val_data.json', 'w'))
-json.dump(test_dataset, open('./mscoco_data/K_test_data.json', 'w'))
-json.dump(train_dataset, open('./mscoco_data/K_train_data.json', 'w'))
+json.dump(val_dataset, open('../mscoco_person_data/K_val_data.json', 'w'))
+json.dump(test_dataset, open('../mscoco_person_data/K_test_data.json', 'w'))
+json.dump(train_dataset, open('../mscoco_person_data/K_train_data.json', 'w'))

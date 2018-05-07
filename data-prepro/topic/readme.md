@@ -11,5 +11,4 @@
 1. Download the [description data](https://drive.google.com/open?id=0B0ywwgffWnLLZW9uVHNjb2JmNlE).
 2. Run `python get_split.py` to generate dataset split following the ECCV16 paper "Generating Visual Explanations".
 3. Run `python prepro_cub_annotation.py` to generate annotation json file for testing. 
-4. Run `python extract_topic.py` to add topic into annotation json file.
-5. Run `python cub_preprocess_token.py %phase` for tokenization like `python cub_preprocess_token.py train`
+4. Run `./cub_preprocess.sh` for tokenization.

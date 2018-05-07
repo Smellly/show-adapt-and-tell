@@ -62,7 +62,7 @@ def clean_words(data):
 
 
 phase = sys.argv[1]
-data_path = './cub_datab/K_' + phase + '_annotation.json'
+data_path = './cub_data/K_' + phase + '_annotation.json'
 data = load_json(data_path)
 # print type(data), data.keys()
 
@@ -112,9 +112,9 @@ if not os.path.isfile('./cub_data/dictionary_'+str(thres)+'.npz'):
 
     print 'Threshold of word fequency =', thres
     print 'Total words in the dictionary =', len(word2idx.keys())
-    np.savez('cub_dataset/dictionary_'+str(thres), word2idx=word2idx, idx2word=idx2word)
+    np.savez('cub_data/dictionary_'+str(thres), word2idx=word2idx, idx2word=idx2word)
 else:
-    tem = np.load('cub_dataset/dictionary_'+str(thres)+'.npz')
+    tem = np.load('cub_data/dictionary_'+str(thres)+'.npz')
     word2idx = tem['word2idx'].item(0)
     idx2word = tem['idx2word'].item(0)
 

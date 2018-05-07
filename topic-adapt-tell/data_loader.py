@@ -227,7 +227,7 @@ class mscoco():
         #     image_feature[i, :] = self.test_flickr_img_feat[self.target_test_images[i]]
         #     image_id[i] = int(self.target_test_images[i])
         for ind, i in enumerate(self.target_test_images):
-            image_feature[ind, :] = np.asarray(i)
+            image_feature[ind, :] = i
             image_id[ind] = int(self.target_test_image_id)
         return image_feature, image_id, self.target_test_annotation
 

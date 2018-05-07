@@ -5,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import pdb
 import sys
+
 def load_json(p):
 	return json.load(open(p,'r'))
 

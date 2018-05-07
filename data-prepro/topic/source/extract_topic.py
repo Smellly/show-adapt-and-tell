@@ -180,23 +180,23 @@ if __name__ == '__main__':
     elif phase == 'extract':
         # after we python prepro_coco_annotation.py
         # then we extract topic from K_phase_annotation
-        K_train_annotation_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_train_annotation.json'
-        K_val_annotataion_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_val_annotation.json'
-        K_test_annotataion_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_test_annotation.json'
+        K_train_annotation_path = '../mscoco_person_data/K_train_annotation.json'
+        K_val_annotation_path = '../mscoco_person_data/K_val_annotation.json'
+        K_test_annotation_path = '../mscoco_person_data/K_test_annotation.json'
 
         captions_json = ReadJson(K_train_annotation_path)
         new_json = extractTopic(captions_json)
-        with open('../mscoco_person_data/K_train_annotation.json', 'w') as f:
+        with open('../mscoco_person_data/K_train_person_annotation.json', 'w') as f:
             json.dump(new_json, f)
 
         captions_json = ReadJson(K_val_annotation_path)
         new_json = extractTopic(captions_json)
-        with open('../mscoco_person_data/K_val_annotation.json', 'w') as f:
+        with open('../mscoco_person_data/K_val_person_annotation.json', 'w') as f:
             json.dump(new_json, f)
 
         captions_json = ReadJson(K_test_annotation_path)
         new_json = extractTopic(captions_json)
-        with open('../mscoco_person_data/K_test_annotation.json', 'w') as f:
+        with open('../mscoco_person_data/K_test_person_annotation.json', 'w') as f:
             json.dump(new_json, f)
 
         # cub as the same

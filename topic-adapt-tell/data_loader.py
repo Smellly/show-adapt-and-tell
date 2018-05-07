@@ -172,15 +172,16 @@ class mscoco():
         self.num_train = self.caption_train.shape[0]
         self.num_test = self.caption_test.shape[0]
         # Load annotation
-        # self.source_test_annotation = json.load(open('./data/K_val_annotation.json'))
+        self.source_test_annotation = json.load(open('./data/K_val_annotation.json'))
         # self.source_test_images = self.source_test_annotation.keys()
         tmp = utils.unpickle('./data/K_annotation_val2014.pkl')
-        self.source_test_annotation = tmp['caption_entity']
+        # self.source_test_annotation = tmp['caption_entity']
         self.source_test_images = tmp['topic_entity']
         self.source_test_image_filename = tmp['file_name']
         self.source_test_filename2id = tmp['filename2id']
         # a image with 5 caption and 5 themes
         self.source_num_test_images = len(self.source_test_images)
+
         self.target_test_annotation = json.load(open('./cub/K_test_annotation.json'))
         # self.test_images = self.target_test_annotation.keys()
         tmp = utils.unpickle('./cub/tokenized_test_caption.pkl')
@@ -220,17 +221,20 @@ class mscoco():
 
     # cub
     def get_test_for_eval(self):
-        # image_feature = np.zeros([self.num_target_test_images, self.img_dims])
-        image_id = np.zeros([self.num_target_test_images])
+        image_feature = np.zeros([self.num_target_test_images, self.max_themes])
+        image_id = np.zeros([self.num_target_test_images], dtype=int)
         # for i in range(self.num_target_test_images):
         #     image_feature[i, :] = self.test_flickr_img_feat[self.target_test_images[i]]
         #     image_id[i] = int(self.target_test_images[i])
-        return self.target_test_images, self.target_test_image_id, self.target_test_annotation
+        for ind, i in enumerate(self.target_test_images):
+            image_feature[ind, :] = np.asarray(i)
+            image_id[ind] = int(self.target_test_image_id)
+        return image_feature, image_id, self.target_test_annotation
 
     # mscoco
     def get_source_test_for_eval(self):
         image_feature = np.zeros([self.source_num_test_images, self.max_themes])
-        image_id = np.zeros([self.source_num_test_images])
+        image_id = np.zeros([self.source_num_test_images], dtype=int)
         # for i in range(self.source_num_test_images):
             # image_feature[i, :] = self.img_feat[get_key(self.id2filename[self.source_test_images[i]])]
             # image_id[i] = int(self.source_test_images[i])
@@ -248,7 +252,7 @@ class mscoco():
                     'constant',
                     constant_values=(0, 0)
                     )
-        return self.source_test_images, image_id, self.source_test_annotation
+        return image_feature, image_id, self.source_test_annotation
 
     def get_wrong_text(self, num_data, phase='train'):
         assert phase=='train'

@@ -35,7 +35,7 @@ class G_pretrained():
         self.ss_max = conf.ss_max
         # train pretrained model -> no need to add START_TOKEN
         #                        -> need to add END_TOKEN
-        self.img_dims = self.dataset.max_themes + 1
+        self.img_dims = self.dataset.max_themes
         self.lstm_steps = self.max_words+1
         self.theme_lstm_steps = dataset.max_themes+1
         self.global_step = tf.get_variable(
@@ -230,13 +230,13 @@ class G_pretrained():
         self.tr_count = 0
         for idx in range(self.max_iter//3000):
             print "Epoch %d"%(self.max_iter//3000)
-            print "Evaluate source test set..."
+            print "### Evaluate source test set..."
             self.evaluate('test', self.tr_count)
-            print "Evaluate target test set..."
+            print "### Evaluate target test set..."
             self.evaluate('target_test', self.tr_count)
-            print "Evaluate train max"
+            print "### Evaluate train max"
             self.evaluate('train', self.tr_count, eval_algo='max')
-            print "Evaluate train sample"
+            print "### Evaluate train sample"
             self.evaluate('train', self.tr_count, eval_algo='sample')
             self.save(self.checkpoint_dir, self.tr_count)
             for k in tqdm(range(3000)):
@@ -297,6 +297,7 @@ class G_pretrained():
                     self.lr.assign(self.current_lr).eval()
 
     def evaluate(self, split, count, eval_algo='max'):
+        print '### Evaluate split:', split
         if not self.is_train:
             self.saver = tf.train.Saver(var_list=self.G_params_dict)
             self.saver.restore(self.sess, self.load_ckpt)
@@ -320,9 +321,10 @@ class G_pretrained():
             prediction = self._predict_words_sample
         for i in range(num_eval//100):
             image_feature_one = image_feature[i*100:(i+1)*100]
-            print 'image_feature_one:', image_feature_one
-            print 'images_one shape:', self.images_one.shape
-            print 'img_feat_one shape:', image_feature_one.shape
+            # print 'img_feat_one:', image_feature_one
+            # print 'img_id:', image_id[i*100:(i+1)*100]
+            # print 'images_one shape:', self.images_one.shape
+            # print 'img_feat_one shape:', image_feature_one.shape
             predict_words = self.sess.run(prediction,{
                                 self.images_one: image_feature_one,
                                 })
@@ -353,8 +355,10 @@ class G_pretrained():
                     int(image_id[j]))] = [{'image_id':str(int(image_id[j])), 'caption':samples[j][0]}]
                 meteor_id.append(str(int(image_id[j])))
             #np.savez("result_%s"%str(count), meteor_pd=meteor_pd, meteor_id=meteor_id)
+            # coco(groundTruth), cocoRes, cocoImgIds
             scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
-            scorer.evaluate(verbose=True)               
+            # scorer.evaluate(verbose=True)               
+            scorer.evaluate()               
 
     def save(self, checkpoint_dir, step):
         model_name = "G_pretrained"

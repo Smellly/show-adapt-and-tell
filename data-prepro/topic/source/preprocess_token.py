@@ -1,5 +1,5 @@
 import re
-import json
+# import json
 import numpy as np
 from tqdm import tqdm
 import pdb
@@ -12,8 +12,10 @@ import sys
 def unpickle(p):
     return cPickle.load(open(p,'r'))
 
+'''
 def load_json(p):
     return json.load(open(p,'r'))
+'''
 
 def clean_words(data):
     dict = {}
@@ -65,6 +67,7 @@ data = unpickle(data_path)
 thres = 5
 
 # create word2idx and idx2word
+# we should use the whole mscoco word here
 if not os.path.isfile('../mscoco_person_data/dictionary_'+str(thres)+'.npz'):
         # clean the words through the frequency
         if not os.path.isfile('K_cleaned_words.npz'):
@@ -93,13 +96,14 @@ if not os.path.isfile('../mscoco_person_data/dictionary_'+str(thres)+'.npz'):
 
         print 'Threshold of word fequency =', thres
         print 'Total words in the dictionary =', len(word2idx.keys())
-        np.savez('./mscoco_person_data/dictionary_'+str(thres), word2idx=word2idx, idx2word=idx2word)
+        np.savez('../mscoco_person_data/dictionary_'+str(thres), word2idx=word2idx, idx2word=idx2word)
 else:
-        tem = np.load('./mscoco_person_data/dictionary_'+str(thres)+'.npz')
-        word2idx = tem['word2idx'].item(0)
-        idx2word = tem['idx2word'].item(0)
+    tem = np.load('../mscoco_person_data/dictionary_'+str(thres)+'.npz')
+    word2idx = tem['word2idx'].item(0)
+    idx2word = tem['idx2word'].item(0)
 
 num_sentence = 0
+num_topic = 0
 eliminate = 0
 tokenized_caption_list = []
 tokenized_topic_list = []
@@ -120,12 +124,50 @@ for k in tqdm(range(len(data['caption_entity']))):
     tokenized_sent.fill(int(word2idx[u'<NOT>']))
     tokenized_topic = np.zeros([7+1], dtype=int) # max topic words is 7
     #tokenized_sent[0] = int(word2idx[u'<BOS>'])
-    valid = True
     count = 0
+    # topic_count = 0
     caption = []
     newtopic = []
-    if len(topics) < 7+1:
+    valid = False
+
+    if len(words) <= 30:
+        valid = True
+        for word in words:
+            try:
+                word = word.lower()
+                for p in string.punctuation:
+                        if p in word:
+                                word = word.replace(p,'')
+                if word != "":
+                        idx = int(word2idx[word])
+                        tokenized_sent[count] = idx
+                        caption.append(word)
+                        count += 1
+            except KeyError:
+                # if contain <UNK> then drop the sentence
+                if phase == 'train':
+                    valid = False
+                    break
+                else:
+                    tokenized_sent[count] = int(word2idx[u'<UNK>'])
+                    count += 1
+        if valid:
+            tokenized_sent[count] = (word2idx["<EOS>"]) # the end of a sentence
+            caption_list.append(caption)
+            length = np.sum((tokenized_sent!=0)+0)
+            tokenized_caption_list.append(tokenized_sent)
+            filename_list.append(filename)
+            caption_length.append(length)
+            num_sentence += 1
+        else:
+            # if phase == 'val':
+            #         pdb.set_trace()
+            eliminate += 1  
+
+    if valid: # and len(topics) < 7+1:
         for ind, topic in enumerate(topics):
+            if ind > 7:
+                break
             try:
                 topic = topic.lower()
                 for p in string.punctuation:
@@ -134,53 +176,27 @@ for k in tqdm(range(len(data['caption_entity']))):
                 idx = int(word2idx[topic])
                 tokenized_topic[ind] = idx
                 newtopic.append(topic)
+                # topic_count += 1
             except KeyError:
-                    # if contain <UNK> then drop the sentence
-                    if phase == 'train':
-                        valid = False
-                        break
-                    else:
-                        tokenized_topic[ind] = int(word2idx[u'<UNK>'])
+                pass
+                # if contain <UNK> then drop the sentence
+                # if phase == 'train':
+                #     valid = False
+                #     break
+                # else:
+                #     tokenized_topic[ind] = int(word2idx[u'<UNK>'])
+                #     # topic_count += 1
         if valid:
-            tokenized_topic[count] = (word2idx["<EOS>"])
+            # tokenized_topic[topic_count] = (word2idx["<EOS>"])  
             topic_list.append(newtopic)
             length = np.sum((tokenized_sent!=0)+0)
             tokenized_topic_list.append(tokenized_topic)
             topic_length.append(length)
-    
-    if len(words) <= 30:
-        for word in words:
-                try:
-                        word = word.lower()
-                        for p in string.punctuation:
-                                if p in word:
-                                        word = word.replace(p,'')
-                        if word != "":
-                                idx = int(word2idx[word])
-                                tokenized_sent[count] = idx
-                                caption.append(word)
-                                count += 1
-                except KeyError:
-                        # if contain <UNK> then drop the sentence
-                        if phase == 'train':
-                                valid = False
-                                break
-                        else:
-                                tokenized_sent[count] = int(word2idx[u'<UNK>'])
-                                count += 1
-        if valid:
-                tokenized_sent[count] = (word2idx["<EOS>"])
-                caption_list.append(caption)
-                length = np.sum((tokenized_sent!=0)+0)
-                tokenized_caption_list.append(tokenized_sent)
-                filename_list.append(filename)
-                caption_length.append(length)
-                num_sentence += 1
-        else:
-                # if phase == 'val':
-                #         pdb.set_trace()
-                eliminate += 1  
+            num_topic += 1
 
+print "num topic:", num_topic
+print "num sentence:", num_sentence
+assert num_topic == num_sentence
 
 tokenized_caption_info = {}
 tokenized_caption_info['caption_length'] = np.asarray(caption_length)
@@ -192,6 +208,6 @@ tokenized_caption_info['topic_list'] = np.asarray(topic_list)
 tokenized_caption_info['filename_list'] = np.asarray(filename_list)
 
 print 'Number of sentence =', num_sentence
-with open('./mscoco_person_data/tokenized_'+phase+'_caption.pkl', 'w') as outfile:
+with open('../mscoco_person_data/tokenized_'+phase+'_caption.pkl', 'w') as outfile:
         pickle.dump(tokenized_caption_info, outfile)
 

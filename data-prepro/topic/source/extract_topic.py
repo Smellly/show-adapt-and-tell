@@ -22,6 +22,8 @@ from tqdm import tqdm
 import json
 import cPickle as pkl
 
+import sys
+
 person = [
             'man', 'men', 'people', 'person', 'woman', 'women', 'child', 'children',
             'baby', 'guy', 'husband', 'wife', 'brother', 'sister', 'gentleman', 
@@ -101,6 +103,7 @@ def filterMscocoTopic(json_file):
 
     new_json = []
     tag = False
+    images_info = json_file['images']
     json_file = json_file['annotations']
 
     for item in tqdm(json_file):
@@ -127,7 +130,10 @@ def filterMscocoTopic(json_file):
     # print sorted(wordDict.items(), key=lambda x:x[1])
     print 'old_json num:', len(json_file)
     print 'new_json num:', len(new_json)
-    return new_json
+    save = dict()
+    save['images'] = images_info
+    save['annotations'] = new_json
+    return save
 
 def FindSynonyms(adjs, path):
     synonym_list = dict()
@@ -155,41 +161,45 @@ def FindSynonyms(adjs, path):
     return synonym_list
 
 if __name__ == '__main__':
-    # first we filter the person caption from raw annotation
-    train_mscoco_path = '../../MSCOCO_preprocess/annotations/captions_train2014.json'
-    val_mscoco_path = '../../MSCOCO_preprocess/annotations/captions_val2014.json'
+    phase = sys.argv[1]
+    if phase == 'filter':
+        # first we filter the person caption from raw annotation
+        train_mscoco_path = '../../MSCOCO_preprocess/annotations/captions_train2014.json'
+        val_mscoco_path = '../../MSCOCO_preprocess/annotations/captions_val2014.json'
+    
+        captions_json = ReadJson(train_mscoco_path)
+        new_json = filterMscocoTopic(captions_json)
+        with open('../mscoco_person_data/captions_person_train2014.json', 'w') as f:
+            json.dump(new_json, f)
 
-    captions_json = ReadJson(train_mscoco_path)
-    new_json = filterMscocoTopic(captions_json)
-    save = dict()
-    save['annotations'] = new_json
-    with open('../mscoco_person_data/captions_person_train2014.json', 'w') as f:
-        json.dump(save, f)
-    captions_json = ReadJson(val_mscoco_path)
-    new_json = filterMscocoTopic(captions_json)
-    save = dict()
-    save['annotations'] = new_json
-    with open('../mscoco_person_data/captions_person_val2014.json', 'w') as f:
-        json.dump(save, f)
+        captions_json = ReadJson(val_mscoco_path)
+        new_json = filterMscocoTopic(captions_json)
+        with open('../mscoco_person_data/captions_person_val2014.json', 'w') as f:
+            json.dump(new_json, f)
 
-    # after we python prepro_coco_annotation.py
-    # then we extract topic from K_phase_annotation
-    K_train_annotation_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_train_annotation.json'
-    K_val_annotataion_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_val_annotation.json'
-    K_test_annotataion_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_test_annotation.json'
+    elif phase == 'extract':
+        # after we python prepro_coco_annotation.py
+        # then we extract topic from K_phase_annotation
+        K_train_annotation_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_train_annotation.json'
+        K_val_annotataion_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_val_annotation.json'
+        K_test_annotataion_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_test_annotation.json'
 
-    captions_json = ReadJson(K_train_annotation_path)
-    new_json = extractTopic(captions_json)
-    with open('../mscoco_person_data/K_train_annotation.json', 'w') as f:
-        json.dump(new_json, f)
-    captions_json = ReadJson(K_val_annotation_path)
-    new_json = extractTopic(captions_json)
-    with open('../mscoco_person_data/K_val_annotation.json', 'w') as f:
-        json.dump(new_json, f)
-    captions_json = ReadJson(K_test_annotation_path)
-    new_json = extractTopic(captions_json)
-    with open('../mscoco_person_data/K_test_annotation.json', 'w') as f:
-        json.dump(new_json, f)
+        captions_json = ReadJson(K_train_annotation_path)
+        new_json = extractTopic(captions_json)
+        with open('../mscoco_person_data/K_train_annotation.json', 'w') as f:
+            json.dump(new_json, f)
 
-    # cub as the same
-    # cub_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_data/K_train_annotation.json'
+        captions_json = ReadJson(K_val_annotation_path)
+        new_json = extractTopic(captions_json)
+        with open('../mscoco_person_data/K_val_annotation.json', 'w') as f:
+            json.dump(new_json, f)
+
+        captions_json = ReadJson(K_test_annotation_path)
+        new_json = extractTopic(captions_json)
+        with open('../mscoco_person_data/K_test_annotation.json', 'w') as f:
+            json.dump(new_json, f)
+
+        # cub as the same
+        # cub_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_data/K_train_annotation.json'
+    else:
+        print 'error param'

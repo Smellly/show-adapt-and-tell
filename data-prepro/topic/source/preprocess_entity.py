@@ -50,7 +50,7 @@ img_name = []
 
 for p in phase:
     # lemmatizer = WordNetLemmatizer()
-    data_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/annotations/captions_%s2014.json' % p
+    data_path = '../mscoco_person_data/captions_person_%s2014.json' % p
     data = load_json(data_path)
     for img_info in data['images']:
         if img_info['id'] in split_id:
@@ -86,6 +86,6 @@ out['topic_entity'] = topic_list
 
 print 'Saving ...'
 print 'Numer of sentence =', len(description_list)      
-with open('./mscoco_person_data/K_annotation_%s2014.pkl'%desired_phase, 'w') as outfile:
+with open('../mscoco_person_data/K_annotation_%s2014.pkl'%desired_phase, 'w') as outfile:
     pickle.dump(out, outfile)
 

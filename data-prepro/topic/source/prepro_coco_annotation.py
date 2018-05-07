@@ -120,7 +120,7 @@ for i in tqdm(range(len(data))):
 
 print 'number of skip train data: ' + str(skip_num)
 
-[u'info', u'images', u'licenses', u'type', u'annotations']
+# [u'info', u'images', u'licenses', u'type', u'annotations']
 
 #json.dump(val_data, open('K_val_train.json', 'w'))
 json.dump(val_data, open('./mscoco_data/K_val_annotation.json', 'w'))

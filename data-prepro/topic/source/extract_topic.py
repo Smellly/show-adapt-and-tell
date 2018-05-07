@@ -22,6 +22,17 @@ from tqdm import tqdm
 import json
 import cPickle as pkl
 
+person = [
+            'man', 'men', 'people', 'person', 'woman', 'women', 'child', 'children',
+            'baby', 'guy', 'husband', 'wife', 'brother', 'sister', 'gentleman', 
+            'policeman', 'fireman', 'bussinessman', 'human', 'fisherman', 'cameraman',
+            'batman', 'serviceman', 'workman', 'salesman', 'boy', 'girl'
+            ]
+
+sports = [
+            'tennis', 'baseball', 'ball', 'player', 'court', 'game', 'bat', 'lot',
+            'racket', 'sport', 'batman', 'baseman']
+
 def Read(path):
     adjs = []
     with open(path, 'r') as fr:
@@ -46,20 +57,10 @@ def get_wordnet_pos(treebank_tag):
     else:
         return None
 
-def genWordDict(json_file):
+# extract from preprocess json which by prepro_coco_annotation.py
+def extractTopic(json_file):
     wordDict = dict()
     lemmatizer = WordNetLemmatizer()
-
-    person = [
-            'man', 'men', 'people', 'person', 'woman', 'women', 'child', 'children',
-            'baby', 'guy', 'husband', 'wife', 'brother', 'sister', 'gentleman', 
-            'policeman', 'fireman', 'bussinessman', 'human', 'fisherman', 'cameraman',
-            'batman', 'serviceman', 'workman', 'salesman', 'boy', 'girl'
-            ]
-
-    sports = [
-            'tennis', 'baseball', 'ball', 'player', 'court', 'game', 'bat', 'lot',
-            'racket', 'sport', 'batman', 'baseman']
 
     new_json = dict()
 
@@ -93,6 +94,41 @@ def genWordDict(json_file):
     # print sorted(wordDict.items(), key=lambda x:x[1])
     return new_json
 
+# filter mscoco json
+def filterMscocoTopic(json_file):
+    wordDict = dict()
+    lemmatizer = WordNetLemmatizer()
+
+    new_json = []
+    tag = False
+    json_file = json_file['annotations']
+
+    for item in tqdm(json_file):
+        for word, pos in pos_tag(word_tokenize(item['caption'])):
+            # print 'word, pos:', word, pos
+            if word in person:
+                tag = True
+            if 'themes' not in item:
+                # print 'themes init'
+                item['themes'] = []
+            if pos.startswith('N') or pos.startswith('V'):
+                word_lemma = lemmatizer.lemmatize(word, pos=get_wordnet_pos(pos))
+                # print 'word_lemma:', word_lemma
+                item['themes'].append(word_lemma)
+                # if word_lemma not in wordDict:
+                #     wordDict[word_lemma] = 1
+                # else:
+                #     wordDict[word_lemma] += 1
+        # print 'cap:', cap
+        if tag:
+            new_json.append(item)
+            tag = False
+        # break
+    # print sorted(wordDict.items(), key=lambda x:x[1])
+    print 'old_json num:', len(json_file)
+    print 'new_json num:', len(new_json)
+    return new_json
+
 def FindSynonyms(adjs, path):
     synonym_list = dict()
     for word in adjs:
@@ -119,23 +155,41 @@ def FindSynonyms(adjs, path):
     return synonym_list
 
 if __name__ == '__main__':
-        cub_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_data/K_train_annotation.json'
-        mscoco_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_train_annotation.json'
-        mscoco_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_val_annotation.json'
-        # mscoco_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_test_annotation.json'
-        # captions_json = ReadJson(mscoco_path)
-        captions_json = ReadJson(cub_path)
-        new_json = genWordDict(captions_json)
-        # with open('mscoco_person_data/mscoco_person_val.json', 'w') as f:
-        with open('cub_data/K_train_annotation.json', 'w') as f:
-            json.dump(new_json, f)
-        # with open('mscoco_person_words.pkl', 'w') as f:
-        #     pkl.dump(words, f)
-        # with open('mscoco_person_wordList.txt', 'w') as f:
-        #     for word in sorted(words.items(), key=lambda x:x[1], reverse=True):
-        #         try:
-        #             f.write('%s#%d\n'%(word[0], word[1]))
-        #         except:
-        #             pass
-        # antonyms = FindSynonyms(words, 'words_antonyms.txt')
-        # print 'antonyms:',antonyms
+    # first we filter the person caption from raw annotation
+    train_mscoco_path = '../../MSCOCO_preprocess/annotations/captions_train2014.json'
+    val_mscoco_path = '../../MSCOCO_preprocess/annotations/captions_val2014.json'
+
+    captions_json = ReadJson(train_mscoco_path)
+    new_json = filterMscocoTopic(captions_json)
+    save = dict()
+    save['annotations'] = new_json
+    with open('../mscoco_person_data/captions_person_train2014.json', 'w') as f:
+        json.dump(save, f)
+    captions_json = ReadJson(val_mscoco_path)
+    new_json = filterMscocoTopic(captions_json)
+    save = dict()
+    save['annotations'] = new_json
+    with open('../mscoco_person_data/captions_person_val2014.json', 'w') as f:
+        json.dump(save, f)
+
+    # after we python prepro_coco_annotation.py
+    # then we extract topic from K_phase_annotation
+    K_train_annotation_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_train_annotation.json'
+    K_val_annotataion_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_val_annotation.json'
+    K_test_annotataion_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/MSCOCO_preprocess/mscoco_data/K_test_annotation.json'
+
+    captions_json = ReadJson(K_train_annotation_path)
+    new_json = extractTopic(captions_json)
+    with open('../mscoco_person_data/K_train_annotation.json', 'w') as f:
+        json.dump(new_json, f)
+    captions_json = ReadJson(K_val_annotation_path)
+    new_json = extractTopic(captions_json)
+    with open('../mscoco_person_data/K_val_annotation.json', 'w') as f:
+        json.dump(new_json, f)
+    captions_json = ReadJson(K_test_annotation_path)
+    new_json = extractTopic(captions_json)
+    with open('../mscoco_person_data/K_test_annotation.json', 'w') as f:
+        json.dump(new_json, f)
+
+    # cub as the same
+    # cub_path = '/home/smelly/projects/show-adapt-and-tell/data-prepro/CUB200_preprocess/cub_data/K_train_annotation.json'

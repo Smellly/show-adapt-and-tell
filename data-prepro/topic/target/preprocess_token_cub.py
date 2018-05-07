@@ -129,6 +129,7 @@ else:
 
 # generate tokenized data
 num_sentence = 0
+num_topic = 0
 eliminate = 0
 tokenized_caption_list = []
 tokenized_topic_list = []
@@ -148,11 +149,12 @@ for k in tqdm(range(len(caption_list))):
     words = re.split(' ', sen)
     # pop the last u'.'
     count = 0
-    valid = True
     tokenized_sent = np.ones([31],dtype=int) * word2idx[u'<NOT>']  # initialize as <NOT>
     tokenized_topic = np.zeros([7], dtype=int) # max topix word is 7
     newtopic = []
+    valid = False
     if len(words) <= 30:
+        valid = True
         for word in words:
             try:
                 word = word.lower()
@@ -189,18 +191,20 @@ for k in tqdm(range(len(caption_list))):
                 tokenized_topic[ind] = idx
                 newtopic.append(topic)
             except KeyError:
-                    # if contain <UNK> then drop the sentence
-                    if phase == 'train':
-                        valid = False
-                        break
-                    else:
-                        tokenized_topic[ind] = int(word2idx[u'<UNK>'])
+                pass
         if valid:
             # tokenized_topic[count] = (word2idx["<EOS>"])
             topic_list.append(newtopic)
             # length = np.sum((tokenized_sent!=0)+0)
             tokenized_topic_list.append(tokenized_topic)
             # topic_length.append(length)
+            num_topic += 1
+
+print 'Number of sentence =', num_sentence
+print 'Number of topic =', num_topic
+print 'eliminate = ', eliminate
+
+assert num_topic==num_sentence
 
 tokenized_caption_info = {}
 tokenized_caption_info['tokenized_caption_list'] = np.asarray(tokenized_caption_list)
@@ -210,8 +214,6 @@ tokenized_caption_info['img_id_list'] = np.asarray(img_id_list_new)
 tokenized_caption_info['raw_caption_list'] = np.asarray(caption_list_new)
 tokenized_caption_info['raw_topic_list'] = np.asarray(topic_list_new)
 
-print 'Number of sentence =', num_sentence
-print 'eliminate = ', eliminate
 
 with open('../cub/tokenized_'+phase+'_caption.pkl', 'w') as outfile:
     pkl.dump(tokenized_caption_info, outfile)

@@ -14,5 +14,3 @@ python preprocess_token.py val
 echo 'test'
 python preprocess_token.py test
 
-echo 'prepro_coco_annotation'
-python prepro_coco_annotation.py

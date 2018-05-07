@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 from random import shuffle, seed
 
-input_json = 'neuraltalk2/coco/coco_raw.json'
+input_json = '../../MSCOCO_preprocess/neuraltalk2/coco/coco_raw.json'
 with open(input_json) as data_file:
     data = json.load(data_file)
 

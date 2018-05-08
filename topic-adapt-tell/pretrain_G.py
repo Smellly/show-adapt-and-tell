@@ -229,7 +229,7 @@ class G_pretrained():
         self.current_ss = 0.
         self.tr_count = 0
         for idx in range(self.max_iter//3000):
-            print "Epoch %d"%(self.max_iter//3000)
+            print "Epoch %d"%(idx)
             print "### Evaluate source test set..."
             self.evaluate('test', self.tr_count)
             print "### Evaluate target test set..."
@@ -261,7 +261,6 @@ class G_pretrained():
                         coins[x][y] = False
                     else:
                         coins[x][y] = True
-
 
                 _, loss, summary_str = self.sess.run(
                                 [self.train_op, self.pretrained_loss, self.pretrained_loss_sum],{

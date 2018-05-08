@@ -208,8 +208,9 @@ class mscoco():
     def get_train_annotation(self):
         return self.train_annotation
 
+    # mscoco
     def get_train_for_eval(self, num):
-        image_feature = np.zeros([num, self.img_dims])
+        image_feature = np.zeros([num, self.max_themes])
         filenames = []
         self.random_shuffle()
         for i in range(num):
@@ -228,7 +229,7 @@ class mscoco():
         #     image_id[i] = int(self.target_test_images[i])
         for ind, i in enumerate(self.target_test_images):
             image_feature[ind, :] = i
-            image_id[ind] = int(self.target_test_image_id)
+            image_id[ind] = int(self.target_test_image_id[ind])
         return image_feature, image_id, self.target_test_annotation
 
     # mscoco
@@ -278,7 +279,7 @@ class mscoco():
             else:
                 num_data = self.num_test
            
-        image_feature = np.zeros([num_data, self.img_dims])
+        image_feature = np.zeros([num_data, self.max_themes])
         for i in range(num_data):
             image_feature[i, :] = self.train_img_feat[i]
         return image_feature, caption, img_idx
@@ -317,9 +318,8 @@ class mscoco():
             return indexes
 
     def flickr_sequential_sample(self, batch_size):
-
         end = (self.current_flickr+batch_size) % self.num_train_images_filckr
-        image_feature = np.zeros([batch_size, self.img_dims])
+        image_feature = np.zeros([batch_size, self.max_themes])
         if self.current_flickr + batch_size < self.num_train_images_filckr:
             key = self.train_img_idx[self.current_flickr:end]
         else:

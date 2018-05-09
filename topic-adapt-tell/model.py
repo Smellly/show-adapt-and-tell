@@ -24,7 +24,6 @@ def calculate_loss_and_acc_with_logits(predictions, logits, label, l2_loss, l2_r
         accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"))
     return D_loss, accuracy
 
-
 class SeqGAN():
     def __init__(self, sess, dataset, D_info, conf=None):
 	self.sess = sess
@@ -46,9 +45,9 @@ class SeqGAN():
         self.max_words = dataset.max_words
         self.dataset = dataset
 	# self.img_dims = self.dataset.img_dims
-        self.img_dims = self.dataset.topic_dims
+        self.img_dims = self.dataset.max_themes
 	self.checkpoint_dir = conf.checkpoint_dir
-	self.load_ckpt = conf.ckpt
+	self.load_ckpt = conf.load_ckpt
 	self.lstm_steps = self.max_words+1
         self.START = self.dataset.word2ix[u'<BOS>']
         self.END = self.dataset.word2ix[u'<EOS>']
@@ -287,7 +286,6 @@ class SeqGAN():
 	    assign_op = r.assign(g)
 	    self.sess.run(assign_op)
     def discriminator(self, batch_size, images, text, length, name="discriminator", reuse=False):
-
         ### sentence: B, S
         random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
         with tf.variable_scope(name):
@@ -339,15 +337,24 @@ class SeqGAN():
 	    length_index = length-1
 	    condition = tf.greater_equal(length_index, 0)	# B
             # tf.select is deprecated after tensorflow 0.12
-	    length_index = tf.where(condition, length_index, tf.constant(0, dtype=tf.int32, shape=[batch_size]))
+	    length_index = tf.where(
+                                condition, 
+                                length_index, 
+                                tf.constant(0, dtype=tf.int32, shape=[batch_size]))
             idx = tf.range(batch_size)*self.max_words + length_index  # B
             state_gather = tf.gather(state_flatten, idx)        # B, 2H
             # text embedding
             text_emb = tf.matmul(state_gather, text_W) + text_b # B,H
             text_emb = tf.nn.tanh(text_emb)
             # images embedding
-            images_emb = tf.matmul(images, images_W) + images_b # B,H
-            images_emb = tf.nn.tanh(images_emb)
+            # images_emb = tf.matmul(images, images_W) + images_b # B,H
+            # images_emb = tf.nn.tanh(images_emb)
+            with tf.variable_scope("images"):
+                with tf.device("/cpu:0"):
+                    images_emb = tf.reduce_sum(
+                                    tf.nn.embedding_lookup(word_emb_W, self.images),
+                                    1
+                                    )
             # embed to score
             # tf.mul is deprecated
             logits = tf.multiply(text_emb, images_emb)       # B,H
@@ -355,7 +362,6 @@ class SeqGAN():
 
             #return tf.nn.sigmoid(score), score
 	    return tf.nn.softmax(score), score
-
 
     def text_discriminator(self, sentence, info, name="text_discriminator", reuse=False):
         ### sentence: B, S
@@ -420,7 +426,13 @@ class SeqGAN():
 	    with tf.variable_scope("images"):
                 # "generator/images"
                 images_W = tf.get_variable("images_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
-		images_emb = tf.matmul(images, images_W)   	# B,H
+		# images_emb = tf.matmul(images, images_W)   	# B,H
+                with tf.variable_scope("images"):
+                    with tf.device("/cpu:0"):
+                        images_emb = tf.reduce_sum(
+                                        tf.nn.embedding_lookup(word_emb_W, self.images),
+                                        1
+                                        )
 
         l2_loss = tf.constant(0.0)
 	with tf.variable_scope("domain"):
@@ -437,9 +449,7 @@ class SeqGAN():
 
 	    return predictions, logits, l2_loss
 		
-
     def rollout(self, predict_words, state_list, name="R"):
-
 	random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)	
 	with tf.variable_scope(name):
 	    tf.get_variable_scope().reuse_variables()
@@ -537,7 +547,13 @@ class SeqGAN():
 	    teacher_loss = 0.
 	    for j in range(self.lstm_steps):
 		if j == 0:
-		    images_emb = tf.matmul(self.images, images_W)   	# B,H
+		    # images_emb = tf.matmul(self.images, images_W)   	# B,H
+                    with tf.variable_scope("images"):
+                        with tf.device("/cpu:0"):
+                            images_emb = tf.reduce_sum(
+                                            tf.nn.embedding_lookup(word_emb_W, self.images),
+                                            1
+                                            )
 		    lstm1_in = images_emb
 		else:
 		    tf.get_variable_scope().reuse_variables()
@@ -570,7 +586,6 @@ class SeqGAN():
 	    return teacher_loss, teacher_loss_sum
 
     def generator(self, name='generator', reuse=False):
-
         random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
         with tf.variable_scope(name):
 	    if reuse:
@@ -598,10 +613,16 @@ class SeqGAN():
 	    state_list = []
 	    predict_mask_list = []
             for j in range(self.max_words+1):
+                # print 'j:', j
                 if j == 0:
-                    #images_emb = tf.matmul(self.images, images_W) + images_b       # B,H
-		    images_emb = tf.matmul(self.images, images_W)
-                    lstm1_in = images_emb
+		    # images_emb = tf.matmul(self.images, images_W)
+                    with tf.variable_scope("images"):
+                        with tf.device("/cpu:0"):
+                            images_emb = tf.nn.embedding_lookup(word_emb_W, self.images)
+                    # print 'images shape:', self.images.shape
+                    # print 'images_emb shape:', images_emb.shape
+                    lstm1_in = tf.reduce_sum(images_emb, 1)
+                    # print 'lstm1_in shape:', lstm1_in.shape
                 else:
                     tf.get_variable_scope().reuse_variables()
                     with tf.device("/cpu:0"):
@@ -647,7 +668,6 @@ class SeqGAN():
             return state_list, predict_words, log_probs_action_picked_list, None, predict_mask_list
 
     def generator_test(self, name='generator', reuse=False):
-
         random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
         with tf.variable_scope(name):
             if reuse:
@@ -676,8 +696,11 @@ class SeqGAN():
             predict_mask_list = []
             for j in range(self.max_words+1):
                 if j == 0:
-		    images_emb = tf.matmul(self.images, images_W)
-                    lstm1_in = images_emb
+		    # images_emb = tf.matmul(self.images, images_W)
+                    with tf.variable_scope("images"):
+                        with tf.device("/cpu:0"):
+                            images_emb = tf.nn.embedding_lookup(word_emb_W, self.images)
+                    lstm1_in = tf.reduce_sum(images_emb, 1)
                 else:
                     tf.get_variable_scope().reuse_variables()
                     with tf.device("/cpu:0"):
@@ -721,7 +744,6 @@ class SeqGAN():
             log_probs_action_picked_list = tf.reshape(log_probs_action_picked_list, [-1])       # S*B
             return state_list, predict_words, log_probs_action_picked_list, None, predict_mask_list
 
-
     def train(self):
         print "--------------------------model train---------------------------"
 	self.G_train_op = self.G_optim.minimize(self.G_loss, var_list=self.G_params)
@@ -749,7 +771,10 @@ class SeqGAN():
 	G_count = 0
 	for idx in range(self.max_iter//250):
             self.save(self.checkpoint_dir, count)
-            print "Epoch : %d"%(self.max_iter//250)
+            print "Epoch    : %d"%(idx)
+            print "Iter     : %d"%(count)
+            print "G_iter   : %d"%(G_count)
+            print "D_iter   : %d"%(D_count)
             self.evaluate(count)
             for _ in tqdm(range(250)):
 		tgt_image_feature = self.dataset.flickr_sequential_sample(self.batch_size)
@@ -784,16 +809,17 @@ class SeqGAN():
 
 		    _, D_loss = self.sess.run([self.D_train_op, self.D_loss], feed_dict)
 		    D_count += 1
-		    _, D_text_loss = self.sess.run([self.Domain_text_train_op, self.D_text_loss], \
-			    {self.src_text: right_text,
-			    self.tgt_text: tgt_text,
-			    self.images: tgt_image_feature
+		    _, D_text_loss = self.sess.run(
+                            [self.Domain_text_train_op, self.D_text_loss],
+			    {
+                                self.src_text: right_text,
+			        self.tgt_text: tgt_text,
+			        self.images: tgt_image_feature
 			    })
 
 		count += 1
 
     def evaluate(self, count):
-	
         samples = []
         samples_index = []
 	image_feature, image_id, test_annotation = self.dataset.get_test_for_eval()

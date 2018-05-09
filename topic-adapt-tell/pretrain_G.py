@@ -229,7 +229,8 @@ class G_pretrained():
         self.current_ss = 0.
         self.tr_count = 0
         for idx in range(self.max_iter//3000):
-            print "Epoch %d"%(idx)
+            print "Epoch : %d"%(idx)
+            print "Iter  : %d"%(self.tr_count)
             print "### Evaluate source test set..."
             self.evaluate('test', self.tr_count)
             print "### Evaluate target test set..."

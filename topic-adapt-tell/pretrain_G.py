@@ -85,7 +85,7 @@ class G_pretrained():
                 #             "float32", 
                 #             random_uniform_init
                 #         )
-                theme_embedding = tf.constant(0, dtype=tf.float32, shape=[self.batch_size, self.hidden_size])
+                theme_embedding = tf.constant(0, dtype=tf.float32, shape=[self.batch_size, self.hidden_size], name="images_W")
             with tf.variable_scope("lstm"):
                 # WONT BE CREATED HERE
                 lstm1 = tf.nn.rnn_cell.LSTMCell(self.hidden_size, state_is_tuple=True)
@@ -147,7 +147,7 @@ class G_pretrained():
                 #             "float32", 
                 #             random_uniform_init
                 #         )
-                theme_embedding = tf.constant(0, dtype=tf.float32, shape=[self.batch_size, self.hidden_size])
+                theme_embedding = tf.constant(0, dtype=tf.float32, shape=[self.batch_size, self.hidden_size], name="images_W")
             with tf.variable_scope("lstm"):
                 # "generator/lstm"
                 lstm1 = tf.nn.rnn_cell.LSTMCell(self.hidden_size, state_is_tuple=True)

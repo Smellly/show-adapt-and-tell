@@ -115,12 +115,13 @@ class mscoco():
         # target data
         # flickr_img_path = './cub/cub_trainval_feat.pkl' # todo topic
         # self.num_train_images_filckr = len(self.train_flickr_img_feat.keys())
-        # self.train_img_idx = self.train_flickr_img_feat.keys()
+        # self.t rain_img_idx = self.train_flickr_img_feat.keys()
         flickr_caption_train_data_path = './cub/tokenized_train_caption.pkl'
         flickr_caption_train_data = utils.unpickle(flickr_caption_train_data_path)
         self.flickr_caption_train = flickr_caption_train_data['tokenized_caption_list']
         self.train_flickr_img_feat = flickr_caption_train_data['tokenized_topic_list']
         self.num_train_images_filckr = len(self.train_flickr_img_feat)
+        self.train_img_idx = range(self.num_train_images_filckr)
         self.flickr_caption_idx_train = flickr_caption_train_data['filename_list']
         self.num_flickr_train_caption = self.flickr_caption_train.shape[0]
         # flickr_testimg_path = './cub/cub_test_feat.pkl'

@@ -87,7 +87,7 @@ class G_pretrained():
                 #         )
                 # theme_embedding = tf.constant(0, dtype=tf.float32, shape=[self.batch_size, self.hidden_size], name="images_W")
                 theme_embedding = tf.get_variable(
-                        "images_W",
+                        "theme_embedding",
                         [self.batch_size, self.hidden_size],
                         "float32",
                         )
@@ -153,7 +153,7 @@ class G_pretrained():
                 #             random_uniform_init
                 #         )
                 theme_embedding = tf.get_variable(
-                        "images_W",
+                        "theme_embedding",
                         [self.batch_size, self.hidden_size],
                         "float32",
                         )

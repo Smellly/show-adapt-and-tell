@@ -302,9 +302,9 @@ class SeqGAN():
             with tf.variable_scope("text_emb"):
                 text_W = tf.get_variable("text_W", [2*self.D_hidden_size, self.D_hidden_size],"float32", random_uniform_init)
                 text_b = tf.get_variable("text_b", [self.D_hidden_size], "float32", random_uniform_init)
-            with tf.variable_scope("images_emb"):
-                theme_embedding = tf.get_variable("images_W", [self.img_dims, self.D_hidden_size],"float32", random_uniform_init)
-                images_b = tf.get_variable("images_b", [self.D_hidden_size], "float32", random_uniform_init)
+            # with tf.variable_scope("images_emb"):
+            #     # theme_embedding = tf.get_variable("images_W", [self.img_dims, self.D_hidden_size],"float32", random_uniform_init)
+            #     images_b = tf.get_variable("images_b", [self.D_hidden_size], "float32", random_uniform_init)
             with tf.variable_scope("scores_emb"):
                 # "generator/scores"
                 scores_W = tf.get_variable("scores_W", [self.D_hidden_size, 3], "float32", random_uniform_init)
@@ -431,15 +431,15 @@ class SeqGAN():
 	random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)	
 	with tf.variable_scope(name):
 	    tf.get_variable_scope().reuse_variables()
-	    with tf.variable_scope("images"):
+	    # with tf.variable_scope("images"):
                 # "generator/images"
-                theme_embedding = tf.get_variable("images_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
+                # theme_embedding = tf.get_variable("word_emb_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
 		# images_emb = tf.matmul(images, theme_embedding)   	# B,H
-                with tf.device("/cpu:0"):
-                    images_emb = tf.reduce_sum(
-                                    tf.nn.embedding_lookup(word_emb_W, images),
-                                    1
-                                    )
+            with tf.device("/cpu:0"):
+                images_emb = tf.reduce_sum(
+                                tf.nn.embedding_lookup(word_emb_W, images),
+                                1
+                                )
 
         l2_loss = tf.constant(0.0)
 	with tf.variable_scope("domain"):
@@ -460,9 +460,9 @@ class SeqGAN():
 	random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)	
 	with tf.variable_scope(name):
 	    tf.get_variable_scope().reuse_variables()
-	    with tf.variable_scope("images"):
-                # "generator/images"
-                theme_embedding = tf.get_variable("images_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
+	    # with tf.variable_scope("images"):
+            #     # "generator/images"
+            #     theme_embedding = tf.get_variable("word_emb_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
 	    with tf.variable_scope("lstm"):
                 # WONT BE CREATED HERE
                 lstm1 = tf.nn.rnn_cell.LSTMCell(self.G_hidden_size, state_is_tuple=True)
@@ -535,9 +535,9 @@ class SeqGAN():
         with tf.variable_scope(name):
 	    if reuse:
 		tf.get_variable_scope().reuse_variables()
-	    with tf.variable_scope("images"):
-                # "generator/images"
-                theme_embedding = tf.get_variable("images_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
+	    # with tf.variable_scope("images"):
+            #     # "generator/images"
+            #     theme_embedding = tf.get_variable("word_emb_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
             with tf.variable_scope("lstm"):
 		# "generator/lstm"
                 lstm1 = tf.nn.rnn_cell.LSTMCell(self.G_hidden_size, state_is_tuple=True)
@@ -555,12 +555,12 @@ class SeqGAN():
 	    for j in range(self.lstm_steps):
 		if j == 0:
 		    # images_emb = tf.matmul(self.images, theme_embedding)   	# B,H
-                    with tf.variable_scope("images"):
-                        with tf.device("/cpu:0"):
-                            images_emb = tf.reduce_sum(
-                                            tf.nn.embedding_lookup(word_emb_W, self.images),
-                                            1
-                                            )
+                    # with tf.variable_scope("images"):
+                    with tf.device("/cpu:0"):
+                        images_emb = tf.reduce_sum(
+                                        tf.nn.embedding_lookup(word_emb_W, self.images),
+                                        1
+                                        )
 		    lstm1_in = images_emb
 		else:
 		    tf.get_variable_scope().reuse_variables()
@@ -597,10 +597,10 @@ class SeqGAN():
         with tf.variable_scope(name):
 	    if reuse:
                 tf.get_variable_scope().reuse_variables()
-            with tf.variable_scope("images"):
-                # "generator/images"
-                theme_embedding = tf.get_variable("images_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
-                #images_b = tf.get_variable("images_b", [self.G_hidden_size], "float32", random_uniform_init)
+            # with tf.variable_scope("images"):
+            #     # "generator/images"
+            #     theme_embedding = tf.get_variable("word_emb_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
+            #     #images_b = tf.get_variable("images_b", [self.G_hidden_size], "float32", random_uniform_init)
             with tf.variable_scope("lstm"):
                 lstm1 = tf.nn.rnn_cell.LSTMCell(self.G_hidden_size, state_is_tuple=True)
                 lstm1 = tf.nn.rnn_cell.DropoutWrapper(lstm1, output_keep_prob=1-self.drop_out_rate)
@@ -679,10 +679,10 @@ class SeqGAN():
         with tf.variable_scope(name):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
-            with tf.variable_scope("images"):
-                # "generator/images"
-                theme_embedding = tf.get_variable(
-                        "images_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
+            # with tf.variable_scope("images"):
+            #     # "generator/images"
+            #     theme_embedding = tf.get_variable(
+            #             "word_emb_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
             with tf.variable_scope("lstm"):
                 lstm1 = tf.nn.rnn_cell.LSTMCell(self.G_hidden_size, state_is_tuple=True)
             with tf.device("/cpu:0"), tf.variable_scope("embedding"):
@@ -704,9 +704,9 @@ class SeqGAN():
             for j in range(self.max_words+1):
                 if j == 0:
 		    # images_emb = tf.matmul(self.images, theme_embedding)
-                    with tf.variable_scope("images"):
-                        with tf.device("/cpu:0"):
-                            images_emb = tf.nn.embedding_lookup(word_emb_W, self.images)
+                    # with tf.variable_scope("images"):
+                    with tf.device("/cpu:0"):
+                        images_emb = tf.nn.embedding_lookup(word_emb_W, self.images)
                     lstm1_in = tf.reduce_sum(images_emb, 1)
                 else:
                     tf.get_variable_scope().reuse_variables()
@@ -830,7 +830,7 @@ class SeqGAN():
         samples = []
         samples_index = []
 	image_feature, image_id, test_annotation = self.dataset.get_test_for_eval()
-	num_samples = self.dataset.num_test_images
+	num_samples = self.dataset.source_num_test_images
 	samples_index = np.full([self.batch_size*(num_samples//self.batch_size), self.max_words], self.NOT)
         for i in range(num_samples//self.batch_size):
 	    image_feature_test = image_feature[i*self.batch_size:(i+1)*self.batch_size]

@@ -111,6 +111,7 @@ class mscoco():
     def __init__(self, conf=None):
         # train img feature
         self.dataset_name = 'cub'
+        self.GPretrainedDatasetName = 'mscoco'
         # target data
         # flickr_img_path = './cub/cub_trainval_feat.pkl' # todo topic
         # self.num_train_images_filckr = len(self.train_flickr_img_feat.keys())

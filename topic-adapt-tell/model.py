@@ -10,7 +10,7 @@ import sys
 sys.path.append('./coco_spice/pycocoevalcap/')
 # from coco_spice.pycocoevalcap.eval import COCOEvalCap
 from eval import COCOEvalCap
-import pdb
+# import pdb
 
 def calculate_loss_and_acc_with_logits(predictions, logits, label, l2_loss, l2_reg_lambda):
     # Calculate Mean cross-entropy loss
@@ -126,6 +126,7 @@ class SeqGAN():
 	images_tile_transpose = tf.tile(tf.expand_dims(images_tile_transpose, 0), [rollout_num,1,1,1])  #R,S,B,I
 	images_reshape = tf.reshape(images_tile_transpose, [-1, self.img_dims]) #R*S*B,I
 
+        # params: batch_size, images, text, length, name="discriminator", reuse=False):
 	D_rollout_vqa_softmax, D_rollout_logits_vqa = self.discriminator(
                 rollout_size, images_reshape, rollout, rollout_length, name="D", reuse=False)
 	D_rollout_text, D_rollout_text_softmax, D_logits_rollout_text, \
@@ -285,6 +286,8 @@ class SeqGAN():
 	for r, g in zip(self.R_params, self.G_params):
 	    assign_op = r.assign(g)
 	    self.sess.run(assign_op)
+
+    # Multi-modal critic
     def discriminator(self, batch_size, images, text, length, name="discriminator", reuse=False):
         ### sentence: B, S
         random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
@@ -328,7 +331,7 @@ class SeqGAN():
                     # state_list.append(tf.concat(1,[state[0], state[1]]))
                     state_list.append(tf.concat([state[0], state[1]], 1))
 
-        # tf.pack is deprecated by tf.stack
+            # tf.pack is deprecated by tf.stack
             state_list = tf.stack(state_list)    # S,B,2H
             state_list = tf.transpose(state_list, [1,0,2])      # B,S,2H
             state_flatten = tf.reshape(state_list, [-1, 2*self.D_hidden_size])       # B*S, 2H
@@ -344,7 +347,11 @@ class SeqGAN():
             idx = tf.range(batch_size)*self.max_words + length_index  # B
             state_gather = tf.gather(state_flatten, idx)        # B, 2H
             # text embedding
+            # print 'idx shape:', idx.shape
+            # print 'state_gather shape:', state_gather.shape
+            # print 'text_W shape:', text_W.shape
             text_emb = tf.matmul(state_gather, text_W) + text_b # B,H
+            # print 'text_emb shape:', text_emb.shape
             text_emb = tf.nn.tanh(text_emb)
             # images embedding
             # images_emb = tf.matmul(images, images_W) + images_b # B,H
@@ -352,11 +359,12 @@ class SeqGAN():
             with tf.variable_scope("images"):
                 with tf.device("/cpu:0"):
                     images_emb = tf.reduce_sum(
-                                    tf.nn.embedding_lookup(word_emb_W, self.images),
+                                    tf.nn.embedding_lookup(word_emb_W, images),
                                     1
                                     )
             # embed to score
             # tf.mul is deprecated
+            # multiply is dot mul
             logits = tf.multiply(text_emb, images_emb)       # B,H
             score = tf.matmul(logits, scores_W) + scores_b
 
@@ -427,12 +435,11 @@ class SeqGAN():
                 # "generator/images"
                 images_W = tf.get_variable("images_W", [self.img_dims, self.G_hidden_size], "float32", random_uniform_init)
 		# images_emb = tf.matmul(images, images_W)   	# B,H
-                with tf.variable_scope("images"):
-                    with tf.device("/cpu:0"):
-                        images_emb = tf.reduce_sum(
-                                        tf.nn.embedding_lookup(word_emb_W, self.images),
-                                        1
-                                        )
+                with tf.device("/cpu:0"):
+                    images_emb = tf.reduce_sum(
+                                    tf.nn.embedding_lookup(word_emb_W, images),
+                                    1
+                                    )
 
         l2_loss = tf.constant(0.0)
 	with tf.variable_scope("domain"):

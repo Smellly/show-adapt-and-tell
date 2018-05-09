@@ -325,9 +325,11 @@ class G_pretrained():
             # print 'img_id:', image_id[i*100:(i+1)*100]
             # print 'images_one shape:', self.images_one.shape
             # print 'img_feat_one shape:', image_feature_one.shape
-            predict_words = self.sess.run(prediction,{
+            predict_words = self.sess.run(
+                            prediction,
+                            {
                                 self.images_one: image_feature_one,
-                                })
+                            })
             for j in range(100):
                 samples.append(
                         [self.dataset.decode(predict_words[j, :], type='string', remove_END=True)[0]])
@@ -338,11 +340,10 @@ class G_pretrained():
         if split == 'train':
             # save for negative sample  
             samples = np.asarray(samples)
-            sample_dir = os.path.join("./negative_samples", self.dataset.dataset_name+'_'+eval_algo)
+            sample_dir = os.path.join("./negative_samples", self.dataset.GPretrainedDatasetName+'_'+eval_algo)
             if not os.path.exists(sample_dir):
                 os.makedirs(sample_dir)
-            file_name = "%s_%s" % (self.dataset.dataset_name, str(count))
-            #file_name = "%s_%s_%s" % (self.dataset.dataset_name, "final", str(count))
+            file_name = "%s_%s" % (self.dataset.GPretrainedDatasetName, str(count))
             np.savez(os.path.join(
                 sample_dir, file_name), string=samples, index=samples_index, img_name=img_name)
         else:
@@ -362,7 +363,7 @@ class G_pretrained():
 
     def save(self, checkpoint_dir, step):
         model_name = "G_pretrained"
-        model_dir = "%s" % (self.dataset.dataset_name)
+        model_dir = "%s" % (self.dataset.GPretrainedDatasetName)
         checkpoint_dir = os.path.join(checkpoint_dir, model_dir, "G_pretrained")
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
@@ -372,7 +373,7 @@ class G_pretrained():
 
     def load(self, checkpoint_dir):
         print(" [*] Reading checkpoints...")
-        model_dir = "%s" % (self.dataset.dataset_name)
+        model_dir = "%s" % (self.dataset.GPretrainedDatasetName)
         checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
 
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)

@@ -66,19 +66,19 @@ class SeqGAN():
 	
 	# D placeholder
 	# self.images = tf.placeholder('float32', [self.batch_size, self.img_dims])
-	self.images = tf.placeholder('int32', [self.batch_size, self.img_dims])
-	self.right_text = tf.placeholder('int32', [self.batch_size, self.max_words])
-	self.wrong_text = tf.placeholder('int32', [self.batch_size, self.max_words])
+	self.images = tf.placeholder('int32', [self.batch_size, self.img_dims], name='d/images')
+	self.right_text = tf.placeholder('int32', [self.batch_size, self.max_words], name='d/right_text')
+	self.wrong_text = tf.placeholder('int32', [self.batch_size, self.max_words], name='d/wrong_text')
 	self.wrong_length = tf.placeholder('int32', [self.batch_size], name="wrong_length")
         self.right_length = tf.placeholder('int32', [self.batch_size], name="right_length")
 
 	# Domain Classider
 	# self.src_images = tf.placeholder('float32', [self.batch_size, self.img_dims])
 	# self.tgt_images = tf.placeholder('float32', [self.batch_size, self.img_dims])
-	self.src_images = tf.placeholder('int32', [self.batch_size, self.img_dims])
-	self.tgt_images = tf.placeholder('int32', [self.batch_size, self.img_dims])
-	self.src_text = tf.placeholder('int32', [self.batch_size, self.max_words])
-	self.tgt_text = tf.placeholder('int32', [self.batch_size, self.max_words])
+	self.src_images = tf.placeholder('int32', [self.batch_size, self.img_dims], name='dc/src_images')
+	self.tgt_images = tf.placeholder('int32', [self.batch_size, self.img_dims], name='dc/tgt_images')
+	self.src_text = tf.placeholder('int32', [self.batch_size, self.max_words], name='dc/src_text')
+	self.tgt_text = tf.placeholder('int32', [self.batch_size, self.max_words], name='dc/tgt_text')
 	# Optimizer
 	self.G_optim = tf.train.AdamOptimizer(conf.learning_rate)
 	self.D_optim = tf.train.AdamOptimizer(conf.learning_rate)
@@ -145,7 +145,8 @@ class SeqGAN():
                     D_logits_rollout_reshape)) / tf.reduce_sum(tf.stop_gradient(self.predict_mask))
 
 	# Teacher Forcing
-        self.mask = tf.placeholder('float32', [self.batch_size, self.max_words])       # mask out the loss
+        # mask out the loss
+        self.mask = tf.placeholder('float32', [self.batch_size, self.max_words], name='mask')
 	self.teacher_loss, self.teacher_loss_sum = self.Teacher_Forcing(self.right_text, self.mask, name="G", reuse=True)
 
         ###################################################
@@ -245,14 +246,22 @@ class SeqGAN():
 	self.logprobs_mean_sum = tf.summary.scalar("logprobs_mean", 
                 tf.reduce_sum(log_probs_action_picked_list)/tf.reduce_sum(self.predict_mask))
 	self.total_reward_sum = tf.summary.scalar("total_mean_reward", tf.reduce_mean(self.rollout_reward))
-	self.logprobs_mean_sum = tf.summary.scalar(
-                "logprobs_mean", tf.reduce_sum(log_probs_action_picked_list)/tf.reduce_sum(self.predict_mask))
 	self.logprobs_dist_sum = tf.summary.histogram("log_probs", log_probs_action_picked_list)
 	self.D_fake_loss_sum = tf.summary.scalar("D_fake_loss", D_fake_loss)
 	self.D_wrong_loss_sum = tf.summary.scalar("D_wrong_loss", D_wrong_loss)
 	self.D_right_loss_sum = tf.summary.scalar("D_right_loss", D_right_loss)
 	self.D_loss_sum = tf.summary.scalar("D_loss", self.D_loss)
 	self.G_loss_sum = tf.summary.scalar("G_loss", self.G_loss)
+        self.D_summary = tf.summary.merge([
+            self.D_fake_loss_sum,
+            self.D_wrong_loss_sum,
+            self.D_right_loss_sum,
+            self.D_loss_sum] )
+        self.G_summary = tf.summary.merge([
+            self.logprobs_mean_sum,
+            self.total_reward_sum,
+            self.logprobs_dist_sum
+            ])
 	###################################################
         # Record the paramters                            #
         ###################################################
@@ -751,7 +760,7 @@ class SeqGAN():
 	if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 	self.writer = tf.summary.FileWriter(os.path.join(log_dir, "SeqGAN_sample"), self.sess.graph)
-        self.summary_op = tf.summary.merge_all()
+        # self.summary_op = tf.summary.merge_all()
 	tf.initialize_all_variables().run()
 	if self.load_pretrain:
 	    print "[@] Load the pretrained model %s."%self.load_ckpt
@@ -781,12 +790,17 @@ class SeqGAN():
                     row[0:nonENDs[ind]] = 1
 
 		wrong_text = self.dataset.get_wrong_text(self.batch_size)
+                # print 'right_text shape:', right_text.shape
+                # print 'wroong_text shape:', wrong_text.shape
+                # print 'right_text:', right_text[0, :]
+                # print 'wroong_text:', wrong_text[0, :]
 		right_length = np.sum((right_text!=self.NOT)+0, 1)
                 wrong_length = np.sum((wrong_text!=self.NOT)+0, 1)
 		for _ in range(1):	# g_step
 		    # update G
 		    feed_dict = {self.images: tgt_image_feature}
-		    _, G_loss = self.sess.run([self.G_train_op, self.G_loss], feed_dict)
+		    _, G_loss, g_summary = self.sess.run([self.G_train_op, self.G_loss, self.G_summary], feed_dict)
+                    self.writer.add_summary(g_summary, G_count)
 		    G_count += 1
 		for _ in range(20):      # d_step    
 		    # update D
@@ -801,8 +815,7 @@ class SeqGAN():
 			self.src_text: right_text,
 			self.tgt_text: tgt_text}
 
-		    _, D_loss = self.sess.run([self.D_train_op, self.D_loss], feed_dict)
-		    D_count += 1
+		    _, D_loss, d_summary = self.sess.run([self.D_train_op, self.D_loss, self.D_summary], feed_dict)
 		    _, D_text_loss = self.sess.run(
                             [self.Domain_text_train_op, self.D_text_loss],
 			    {
@@ -810,8 +823,10 @@ class SeqGAN():
 			        self.tgt_text: tgt_text,
 			        self.images: tgt_image_feature
 			    })
-                summary_str = self.sess.run([self.summary_op]) 
-                writer.add_summary(summary_str, count)
+                    self.writer.add_summary(d_summary, D_count)
+		    D_count += 1
+                # summary_str = self.sess.run([self.summary_op]) 
+                # self.writer.add_summary(summary_str, count)
 		count += 1
 
     def evaluate(self, count):

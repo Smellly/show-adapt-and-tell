@@ -886,3 +886,76 @@ class SeqGAN():
             return True
         else:
             return False
+
+    # given a list of themes to show two model difference
+    def visualize(self, themes_list):
+        def predict_words(words):
+            tf.get_variable_scope().reuse_variables()
+            with tf.variable_scope("lstm"):
+                lstm1 = tf.nn.rnn_cell.LSTMCell(self.G_hidden_size, state_is_tuple=True)
+            with tf.device("/cpu:0"), tf.variable_scope("embedding"):
+                # "generator/embedding"
+                word_emb_W = tf.get_variable(
+                        "word_emb_W", [self.dict_size, self.G_hidden_size], "float32", random_uniform_init)
+            with tf.variable_scope("output"):
+                # "generator/output"
+                # dict size minus 1 => remove <UNK>
+                output_W = tf.get_variable(
+                        "output_W", [self.G_hidden_size, self.dict_size], "float32", random_uniform_init)
+            start_token = tf.constant(self.START, dtype=tf.int32, shape=[self.batch_size])
+            state = lstm1.zero_state(self.batch_size, 'float32')
+            mask = tf.constant(True, "bool", [self.batch_size])
+            log_probs_action_picked_list = []
+            predict_words = []
+            state_list = []
+            predict_mask_list = []
+            for j in range(self.max_words+1):
+                if j == 0:
+                    with tf.device("/cpu:0"):
+                        images_emb = tf.nn.embedding_lookup(word_emb_W, themes)
+                    lstm1_in = tf.reduce_sum(images_emb, 1)
+                else:
+                    tf.get_variable_scope().reuse_variables()
+                    with tf.device("/cpu:0"):
+                        if j == 1:
+                            lstm1_in = tf.nn.embedding_lookup(word_emb_W, start_token)
+                        else:
+                            lstm1_in = tf.nn.embedding_lookup(word_emb_W, tf.stop_gradient(sample_words))
+                with tf.variable_scope("lstm"):
+                    # "generator/lstm"
+                    output, state = lstm1(lstm1_in, state, scope=tf.get_variable_scope())     # output: B,H
+                if j > 0:
+                    logits = tf.matmul(output, output_W)
+                    log_probs = tf.log(tf.nn.softmax(logits)+1e-8)      # B,D
+                    # word drawn from the multinomial distribution
+                    sample_words = tf.argmax(log_probs, 1)	# B
+                    mask_out_word = tf.where(mask, sample_words,
+                                                tf.constant(self.NOT, dtype=tf.int64, shape=[self.batch_size]))
+                    predict_words.append(mask_out_word)
+            return predict_words
+
+        for ind1, themes in enumerate(themes_list):
+            ContinueFlag = False
+            wordixs = np.zeros([1, self.dataset.max_themes], dtype=int)
+            for ind2, word in enumerate(themes):
+                try:
+                    wordixs[0, ind2] = self.dataset.word2ix[word]
+                except:
+                    ContinueFlag = True
+
+            if ContinueFlag:
+                continue
+            random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
+
+            print "[@] Load the mscoco model %s."%self.load_ckpt
+            self.G_saver = tf.train.Saver(self.G_params_dict)
+            self.G_saver.restore(self.sess, self.load_ckpt)
+            with tf.variable_scope('G'):
+                predict_words(wordixs)
+
+            # SeqGAN
+            print "[@] Load the adapt model %s."%self.load_seqgan_ckpt
+            self.S_saver = tf.train.Saver()
+            self.S_saver.restore(self.sess, self.load_seqgan_ckpt)
+            with tf.variable_scope('G'):
+                predict_words(wordixs)

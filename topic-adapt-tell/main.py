@@ -12,7 +12,7 @@ import pdb
 
 flags = tf.app.flags
 flags.DEFINE_integer("epoch", 100, "Epoch to train [100]")
-flags.DEFINE_float("learning_rate", 5e-5, "Learning rate of for adam [0.0003]")
+flags.DEFINE_float("learning_rate", 1e-4, "Learning rate of for adam [0.0003]")
 flags.DEFINE_float("drop_out_rate", 0.3, "Drop out rate fro LSTM")
 flags.DEFINE_float("discount", 0.95, "discount factor in RL")
 flags.DEFINE_string("model_name", "cub_no_scheduled", "")

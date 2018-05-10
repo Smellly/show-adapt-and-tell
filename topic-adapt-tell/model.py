@@ -823,7 +823,8 @@ class SeqGAN():
 			        self.tgt_text: tgt_text,
 			        self.images: tgt_image_feature
 			    })
-
+                _, summary = self.sess.run([summary_op]) 
+                writer.add_summary(summary, count)
 		count += 1
 
     def evaluate(self, count):

@@ -242,21 +242,12 @@ class SeqGAN():
         # D_real_loss_sum, D_fake_loss_sum = the loss for different kinds input
         # D_loss_sum, G_loss_sum = loss of the G&D
         #######################################################################
-	# self.start_reward_sum = tf.scalar_summary("start_reward", tf.reduce_mean(self.rollout_reward[0,:]))
-	# self.start_reward_sum = tf.scalar_summary("start_reward", tf.reduce_mean(self.rollout_reward[0,:]))
-	# self.total_reward_sum = tf.scalar_summary("total_mean_reward", tf.reduce_mean(self.rollout_reward))
 	self.logprobs_mean_sum = tf.summary.scalar("logprobs_mean", 
                 tf.reduce_sum(log_probs_action_picked_list)/tf.reduce_sum(self.predict_mask))
 	self.total_reward_sum = tf.summary.scalar("total_mean_reward", tf.reduce_mean(self.rollout_reward))
 	self.logprobs_mean_sum = tf.summary.scalar(
                 "logprobs_mean", tf.reduce_sum(log_probs_action_picked_list)/tf.reduce_sum(self.predict_mask))
-	# self.logprobs_dist_sum = tf.histogram_summary("log_probs", log_probs_action_picked_list)
 	self.logprobs_dist_sum = tf.summary.histogram("log_probs", log_probs_action_picked_list)
-	# self.D_fake_loss_sum = tf.scalar_summary("D_fake_loss", D_fake_loss)
-	# self.D_wrong_loss_sum = tf.scalar_summary("D_wrong_loss", D_wrong_loss)
-	# self.D_right_loss_sum = tf.scalar_summary("D_right_loss", D_right_loss)
-	# self.D_loss_sum = tf.scalar_summary("D_loss", self.D_loss)
-	# self.G_loss_sum = tf.scalar_summary("G_loss", self.G_loss)
 	self.D_fake_loss_sum = tf.summary.scalar("D_fake_loss", D_fake_loss)
 	self.D_wrong_loss_sum = tf.summary.scalar("D_wrong_loss", D_wrong_loss)
 	self.D_right_loss_sum = tf.summary.scalar("D_right_loss", D_right_loss)
@@ -587,7 +578,6 @@ class SeqGAN():
 		    teacher_loss += loss_t
 
 	    teacher_loss /= tf.reduce_sum(mask)
-	    # teacher_loss_sum = tf.scalar_summary("teacher_loss", teacher_loss)
 	    teacher_loss_sum = tf.summary.scalar("teacher_loss", teacher_loss)
 
 	    return teacher_loss, teacher_loss_sum
@@ -760,10 +750,7 @@ class SeqGAN():
 	log_dir = os.path.join('.', 'logs', self.model_name)
 	if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-	#### Old version
-	# self.writer = tf.train.SummaryWriter(os.path.join(log_dir, "SeqGAN_sample"), self.sess.graph)
 	self.writer = tf.summary.FileWriter(os.path.join(log_dir, "SeqGAN_sample"), self.sess.graph)
-        # self.summary_op = tf.merge_all_summaries()
         self.summary_op = tf.summary.merge_all()
 	tf.initialize_all_variables().run()
 	if self.load_pretrain:
@@ -823,8 +810,8 @@ class SeqGAN():
 			        self.tgt_text: tgt_text,
 			        self.images: tgt_image_feature
 			    })
-                _, summary = self.sess.run([summary_op]) 
-                writer.add_summary(summary, count)
+                summary_str = self.sess.run([self.summary_op]) 
+                writer.add_summary(summary_str, count)
 		count += 1
 
     def evaluate(self, count):

@@ -21,6 +21,7 @@ flags.DEFINE_integer("G_hidden_size", 512, "")          # 512:G, 64:D
 flags.DEFINE_integer("D_hidden_size", 512, "")
 flags.DEFINE_integer("max_iter", 100000, "")
 flags.DEFINE_integer('max_to_keep', 40, '')
+flags.DEFINE_integer('rollout_num', 3, '')
 flags.DEFINE_string("method", "ROUGE_L", "")
 flags.DEFINE_string("load_ckpt", 
         './checkpoint/mscoco/G_pretrained/G_pretrained-96000', 

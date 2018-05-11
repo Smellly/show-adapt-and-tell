@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 from pretrain_G import G_pretrained
 from pretrain_CNN_D import D_pretrained
-from model import SeqGAN
+from model_test import SeqGAN
 from data_loader import mscoco, mscoco_negative
 import pprint
 import pdb
@@ -16,17 +16,18 @@ flags.DEFINE_float("learning_rate", 1e-4, "Learning rate of for adam [0.0003]")
 flags.DEFINE_float("drop_out_rate", 0.3, "Drop out rate fro LSTM")
 flags.DEFINE_float("discount", 0.95, "discount factor in RL")
 flags.DEFINE_string("model_name", "cub_no_scheduled", "")
-flags.DEFINE_integer("batch_size", 64, "The size of batch images [64]") # 128:G, 32:D
+flags.DEFINE_integer("batch_size", 1, "The size of batch images [64]") # 128:G, 32:D
 flags.DEFINE_integer("G_hidden_size", 512, "")          # 512:G, 64:D
 flags.DEFINE_integer("D_hidden_size", 512, "")
 flags.DEFINE_integer("max_iter", 100000, "")
 flags.DEFINE_integer('max_to_keep', 40, '')
+flags.DEFINE_integer('rollout_num', 3, '')
 flags.DEFINE_string("method", "ROUGE_L", "")
 flags.DEFINE_string("load_ckpt", 
         './checkpoint/mscoco/G_pretrained/G_pretrained-36000', 
         "Directory name to loade the checkpoints [checkpoint]")
 flags.DEFINE_string("load_seqgan_ckpt", 
-        './checkpoint/cub/cub_no_scheduled/SeqGAN_sample-250', 
+        './checkpoint/cub/cub_no_scheduled/SeqGAN_sample-5250', 
         "Directory name to loade the SeqGAN checkpoints [checkpoint]")
 flags.DEFINE_string("checkpoint_dir", 
         "checkpoint", 
@@ -65,7 +66,7 @@ def main(_):
         info={'num_classes':3, 'filter_sizes':filter_sizes, 'num_filters':num_filters,
                         'num_filters_total':num_filters_total, 'l2_reg_lambda':0.2}
         theme1 = ["brown", "bird", "has", "tail", "beak"]
-        theme2 = ["bird", "beak", "cream", "markings"]
+        theme2 = ["bird", "beak", "cream"]
         theme3 = ["woman", "smile", "kitchen"]
         theme4 = ["man", "woman", "cross", "street", "hold", "umbrella"]
         themes_list = [theme1, theme2, theme3, theme4]

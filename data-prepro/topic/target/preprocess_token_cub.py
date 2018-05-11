@@ -90,7 +90,7 @@ for i in split:
 # print topic_list
 
 # build dictionary
-if not os.path.isfile('../cub/dictionary_'+str(thres)+'.npz'):
+if not os.path.isfile('../cub/mscoco&cub_dictionary_'+str(thres)+'.npz'):
     # pdb.set_trace()
     # clean the words through the frequency
     if not os.path.isfile('K_cleaned_words.npz'):
@@ -100,29 +100,25 @@ if not os.path.isfile('../cub/dictionary_'+str(thres)+'.npz'):
         d = words['dict'].item(0)
         freq = words['freq'].item(0)
 
-    idx2word = {}
-    word2idx = {}
-    idx = 1
+    print 'CUB words in the dictionnary =', len(d.keys())
+    
+    tem = np.load('../mscoco_person_data/dictionary_'+str(thres)+'.npz')
+    word2idx = tem['word2idx'].item(0)
+    idx2word = tem['idx2word'].item(0)
+    print 'MSCOCO words in the dictionary =', len(word2idx.keys())
+
+    idx = len(word2idx)
     for k in tqdm(d.keys()):
-        if freq[k] >= thres:
+        if freq[k] >= thres and k not in word2idx:
             word2idx[k] = idx
             idx2word[str(idx)] = k
             idx += 1
 
-    word2idx[u'<BOS>'] = 0
-    idx2word["0"] = u'<BOS>'
-    word2idx[u'<EOS>'] = len(word2idx.keys())
-    idx2word[str(len(idx2word.keys()))] = u'<EOS>'
-    word2idx[u'<UNK>'] = len(word2idx.keys())
-    idx2word[str(len(word2idx.keys()))] = u'<UNK>'
-    word2idx[u'<NOT>'] = len(word2idx.keys())
-    idx2word[str(len(idx2word.keys()))] = u'<NOT>'
-
     print 'Threshold of word fequency =', thres
     print 'Total words in the dictionary =', len(word2idx.keys())
-    np.savez('../cub/dictionary_'+str(thres), word2idx=word2idx, idx2word=idx2word)
+    np.savez('../cub/mscoco&cub_dictionary_'+str(thres), word2idx=word2idx, idx2word=idx2word)
 else:
-    tem = np.load('../cub/dictionary_'+str(thres)+'.npz')
+    tem = np.load('../cub/mscoco&cub_dictionary_'+str(thres)+'.npz')
     word2idx = tem['word2idx'].item(0)
     idx2word = tem['idx2word'].item(0)
     print 'Total words in the dictionary =', len(word2idx.keys())

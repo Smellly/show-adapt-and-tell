@@ -258,6 +258,7 @@ class SeqGAN():
             self.D_right_loss_sum,
             self.D_loss_sum] )
         self.G_summary = tf.summary.merge([
+            self.G_loss_sum,
             self.logprobs_mean_sum,
             self.total_reward_sum,
             self.logprobs_dist_sum

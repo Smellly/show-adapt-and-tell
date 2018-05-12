@@ -225,7 +225,7 @@ class G_pretrained():
         print "---------------------------------Pretrain_G train----------------------------------------------"
         self.train_op = self.optim.minimize(self.pretrained_loss, global_step=self.global_step)
         # self.writer = tf.train.SummaryWriter("./logs/G_pretrained", self.sess.graph)
-        self.writer = tf.summary.FileWriter("./logs/G_pretrained", self.sess.graph)
+        self.writer = tf.summary.FileWriter("./logs_m/G_pretrained", self.sess.graph)
         tf.initialize_all_variables().run()
         self.saver = tf.train.Saver(var_list=self.G_params_dict, max_to_keep=30)
         try:

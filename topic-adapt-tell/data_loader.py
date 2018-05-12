@@ -154,7 +154,7 @@ class mscoco():
         caption_test_data = utils.unpickle(caption_test_data_path)
         self.caption_test = caption_test_data['tokenized_caption_list']
         self.caption_idx_test = caption_test_data['filename_list']
-        dict_path = './data/dictionary_5.npz'
+        dict_path = './cub/mscoco&cub_dictionary_5.npz'
         temp = np.load(dict_path)
         self.ix2word = temp['idx2word'].item()
         self.word2ix = temp['word2idx'].item()

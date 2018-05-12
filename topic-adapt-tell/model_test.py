@@ -955,12 +955,12 @@ class SeqGAN():
             # print 'wordixs:', wordixs
             random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
 
-            print "[@] Load the mscoco model %s."%self.load_ckpt
-            self.G_saver = tf.train.Saver(self.G_params_dict)
-            self.G_saver.restore(self.sess, self.load_ckpt)
-            with tf.variable_scope('G'):
-                print 'mscoco:' 
-                print predict_words(wordixs)
+            # print "[@] Load the mscoco model %s."%self.load_ckpt
+            # self.G_saver = tf.train.Saver(self.G_params_dict)
+            # self.G_saver.restore(self.sess, self.load_ckpt)
+            # with tf.variable_scope('G'):
+            #     print 'mscoco:' 
+            #     print predict_words(wordixs)
 
             # SeqGAN
             print "[@] Load the adapt model %s."%self.load_seqgan_ckpt

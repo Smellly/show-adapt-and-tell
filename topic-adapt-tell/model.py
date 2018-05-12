@@ -761,7 +761,7 @@ class SeqGAN():
 	self.G_hat_train_op = self.T_optim.minimize(self.teacher_loss, var_list=self.G_params)
 	self.D_train_op = self.D_optim.minimize(self.D_loss, var_list=self.D_params)
 	self.Domain_text_train_op = self.Domain_text_optim.minimize(self.D_text_loss)
-	log_dir = os.path.join('.', 'logs', self.model_name)
+	log_dir = os.path.join('.', 'logs_m', self.model_name)
 	if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 	self.writer = tf.summary.FileWriter(os.path.join(log_dir, "SeqGAN_sample"), self.sess.graph)

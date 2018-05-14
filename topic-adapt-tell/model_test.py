@@ -939,6 +939,8 @@ class SeqGAN():
                     remove_END=True)[0]
             return samples
 
+        print "[@] Load the mscoco model %s."%self.load_ckpt
+        print "[@] Load the adapt model %s."%self.load_seqgan_ckpt
         for ind1, themes in enumerate(themes_list):
             ContinueFlag = False
             wordixs = np.zeros([1, self.dataset.max_themes], dtype=int)
@@ -957,7 +959,6 @@ class SeqGAN():
             # print 'wordixs:', wordixs
             random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
 
-            print "[@] Load the mscoco model %s."%self.load_ckpt
             self.G_saver = tf.train.Saver(self.G_params_dict)
             self.G_saver.restore(self.sess, self.load_ckpt)
             with tf.variable_scope('G'):
@@ -965,7 +966,6 @@ class SeqGAN():
                 print predict_words(wordixs)
 
             # SeqGAN
-            print "[@] Load the adapt model %s."%self.load_seqgan_ckpt
             self.S_saver = tf.train.Saver()
             self.S_saver.restore(self.sess, self.load_seqgan_ckpt)
             with tf.variable_scope('G'):

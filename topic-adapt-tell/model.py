@@ -261,6 +261,12 @@ class SeqGAN():
             self.D_wrong_loss_sum,
             self.D_right_loss_sum,
             self.D_loss_sum] )
+        self.D_text_summary = tf.summary.merge([
+            self.D_src_loss_text_sum, 
+            self.D_tgt_loss_text_sum,
+            self.D_fake_loss_text_sum,
+            self.D_text_loss_sum
+            ])
         self.G_summary = tf.summary.merge([
             self.G_loss_sum,
             self.logprobs_mean_sum,
@@ -826,8 +832,8 @@ class SeqGAN():
 			self.tgt_text: tgt_text
                         }
 		    _, D_loss, d_summary = self.sess.run([self.D_train_op, self.D_loss, self.D_summary], feed_dict)
-		    _, D_text_loss = self.sess.run(
-                            [self.Domain_text_train_op, self.D_text_loss],
+		    _, D_text_loss, d_text_summary = self.sess.run(
+                            [self.Domain_text_train_op, self.D_text_loss, self.D_text_summary],
 			    {
                                 self.src_text: right_text,
 			        self.tgt_text: tgt_text,

@@ -247,6 +247,10 @@ class SeqGAN():
                 tf.reduce_sum(log_probs_action_picked_list)/tf.reduce_sum(self.predict_mask))
 	self.total_reward_sum = tf.summary.scalar("total_mean_reward", tf.reduce_mean(self.rollout_reward))
 	self.logprobs_dist_sum = tf.summary.histogram("log_probs", log_probs_action_picked_list)
+        self.D_src_loss_text_sum = tf.summary.scalar("D_src_loss_text", self.D_src_loss_text)
+        self.D_tgt_loss_text_sum = tf.summary.scalar("D_tgt_loss_text", self.D_tgt_loss_text)
+        self.D_fake_loss_text_sum = tf.summary.scalar("D_fake_loss_text", self.D_fake_loss_text)
+        self.D_text_loss_sum = tf.summary.scalar("D_text_loss", self.D_text_loss)
 	self.D_fake_loss_sum = tf.summary.scalar("D_fake_loss", D_fake_loss)
 	self.D_wrong_loss_sum = tf.summary.scalar("D_wrong_loss", D_wrong_loss)
 	self.D_right_loss_sum = tf.summary.scalar("D_right_loss", D_right_loss)
@@ -819,8 +823,8 @@ class SeqGAN():
 			self.src_images: image_feature,
 			self.tgt_images: tgt_image_feature,
 			self.src_text: right_text,
-			self.tgt_text: tgt_text}
-
+			self.tgt_text: tgt_text
+                        }
 		    _, D_loss, d_summary = self.sess.run([self.D_train_op, self.D_loss, self.D_summary], feed_dict)
 		    _, D_text_loss = self.sess.run(
                             [self.Domain_text_train_op, self.D_text_loss],

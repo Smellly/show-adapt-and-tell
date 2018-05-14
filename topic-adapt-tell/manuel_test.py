@@ -8,7 +8,7 @@ from pretrain_CNN_D import D_pretrained
 from model_test import SeqGAN
 from data_loader import mscoco, mscoco_negative
 import pprint
-import pdb
+import ast
 
 flags = tf.app.flags
 flags.DEFINE_integer("epoch", 100, "Epoch to train [100]")
@@ -24,10 +24,10 @@ flags.DEFINE_integer('max_to_keep', 40, '')
 flags.DEFINE_integer('rollout_num', 3, '')
 flags.DEFINE_string("method", "ROUGE_L", "")
 flags.DEFINE_string("load_ckpt", 
-        './checkpoint/mscoco/G_pretrained/G_pretrained-36000', 
+        './checkpoint_m/mscoco/G_pretrained/G_pretrained-45000', 
         "Directory name to loade the checkpoints [checkpoint]")
 flags.DEFINE_string("load_seqgan_ckpt", 
-        './checkpoint/cub/cub_no_scheduled/SeqGAN_sample-5250', 
+        './checkpoint_m/cub/cub_no_scheduled/SeqGAN_sample-14000', 
         "Directory name to loade the SeqGAN checkpoints [checkpoint]")
 flags.DEFINE_string("checkpoint_dir", 
         "checkpoint", 
@@ -49,6 +49,29 @@ tf.app.flags.DEFINE_float('ss_max', 0.25, '0.05*5=0.25')
 FLAGS = flags.FLAGS
 pp = pprint.PrettyPrinter()
 
+def get_themes(top_n=100):
+    with open('mscoco_person_gt.txt', 'r') as f:
+        raw = f.readlines()
+    mscoco_theme = []
+    mscoco_caption = []
+    for i in raw:
+        if 'caption' in i:
+            mscoco_caption.apend(i.split(':')[-1])
+        elif 'themes' in i:
+            mscoco_theme.append(ast.literal_eval(i.split(':')[-1]))
+    with open('cub_gt.txt', 'r') as f:
+        raw = f.readlines()
+    cub_theme = []
+    cub_caption = []
+    for i in raw:
+        if 'caption' in i:
+            cub_caption.apend(i.split(':')[-1])
+        elif 'themes' in i:
+            cub_theme.append(ast.literal_eval(i.split(':')[-1]))
+    theme = mscoco_theme[:top_n] + cub_theme[:top_n]
+    caption = mscoco_caption[:top_n] + cub_caption[:top_n]
+    return theme, caption
+
 def main(_):
     pp.pprint(flags.FLAGS.__flags)
 
@@ -69,10 +92,11 @@ def main(_):
         theme2 = ["bird", "beak", "cream"]
         theme3 = ["woman", "smile", "kitchen"]
         theme4 = ["man", "woman", "cross", "street", "hold", "umbrella"]
-        themes_list = [theme1, theme2, theme3, theme4]
+        # themes_list = [theme1, theme2, theme3, theme4]
+        themes_list, captions_list = get_themes()
         print('is_train:', FLAGS.is_train)
         model = SeqGAN(sess, dataset, info, conf=FLAGS)
-        model.visualize(themes_list)
+        model.visualize(themes_list, captions_list)
         print('Session End......')
 
 if __name__ == '__main__':

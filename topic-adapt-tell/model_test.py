@@ -888,7 +888,7 @@ class SeqGAN():
             return False
 
     # given a list of themes to show two model difference
-    def visualize(self, themes_list):
+    def visualize(self, themes_list, captions_list=None):
         # self.batch_size = 1
         def predict_words(themes):
             tf.get_variable_scope().reuse_variables()
@@ -952,15 +952,17 @@ class SeqGAN():
                 continue
 
             print 'theme:', themes
+            if captions_list:
+                print 'gt : ', captions_list[ind1]
             # print 'wordixs:', wordixs
             random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
 
-            # print "[@] Load the mscoco model %s."%self.load_ckpt
-            # self.G_saver = tf.train.Saver(self.G_params_dict)
-            # self.G_saver.restore(self.sess, self.load_ckpt)
-            # with tf.variable_scope('G'):
-            #     print 'mscoco:' 
-            #     print predict_words(wordixs)
+            print "[@] Load the mscoco model %s."%self.load_ckpt
+            self.G_saver = tf.train.Saver(self.G_params_dict)
+            self.G_saver.restore(self.sess, self.load_ckpt)
+            with tf.variable_scope('G'):
+                print 'mscoco:' 
+                print predict_words(wordixs)
 
             # SeqGAN
             print "[@] Load the adapt model %s."%self.load_seqgan_ckpt

@@ -56,7 +56,7 @@ def get_themes(top_n=100):
     mscoco_caption = []
     for i in raw:
         if 'caption' in i:
-            mscoco_caption.apend(i.split(':')[-1])
+            mscoco_caption.append(i.split(':')[-1].strip())
         elif 'themes' in i:
             mscoco_theme.append(ast.literal_eval(i.split(':')[-1]))
     with open('cub_gt.txt', 'r') as f:
@@ -65,7 +65,7 @@ def get_themes(top_n=100):
     cub_caption = []
     for i in raw:
         if 'caption' in i:
-            cub_caption.apend(i.split(':')[-1])
+            cub_caption.append(i.split(':')[-1])
         elif 'themes' in i:
             cub_theme.append(ast.literal_eval(i.split(':')[-1]))
     theme = mscoco_theme[:top_n] + cub_theme[:top_n]

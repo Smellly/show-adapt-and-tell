@@ -8,9 +8,9 @@ name_id_path = './AIchallengeSet.txt'
 name_id = open(name_id_path).read().splitlines()
 name2id = {}
 id2name = {}
-for i in range(len(name_id)):
-    name2id[name_id[i]] = str(i)
-    id2name[str(i)] = name_id[i]
+for i in name_id:
+    name2id[i] = i
+    id2name[i] = i
 
 cPickle.dump(name2id, open('name2id.pkl', 'wb'))
 cPickle.dump(id2name, open('id2name.pkl', 'wb'))
@@ -23,14 +23,12 @@ rf_cap = open(caption_path, 'r')
 captions = rf_cap.readlines()
 id2caption = {}
 filename2caption = {}
-files = set()
 for i in tqdm(range(len(captions))):
     #print captions[i].strip().split('####')[1]
-    cap = captions[i].strip().split('####')[1]     
-    filename = captions[i].strip().split('####')[0]
+    cap = captions[i].strip().split('#')[-1][2:]
+    filename = captions[i].strip().split('#')[0]
     id2caption[str(i)] = cap
-    if filename not in files:
-        files.add(filename)
+    if filename not in filename2caption:
         filename2caption[filename] = [cap]
     else:
         filename2caption[filename].append(cap)

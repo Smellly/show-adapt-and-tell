@@ -8,7 +8,7 @@ from tqdm import tqdm
 from random import shuffle, seed
 import pickle as pk
 
-def run_proc(name):
+def run_proc(name, data, id2name):
     print("Processing %s_data"%name)
     test_data = {}
     for i in tqdm(dataset[name+'_id']):
@@ -41,17 +41,14 @@ phase = sys.argv[1]
 skip_num = 0
 val_data = {}
 train_data = {}
-val_dataset = []
-test_dataset = []
-counter = 0
 id2name = pk.load(open('id2name.pkl'))
 data = pk.load(open('filename2caption.pkl'))
 
 import thulac
 thul = thulac.thulac()
 
-for i in ['train', 'val', 'test']
-    p = Process(target=run_proc, args=(i,))
+for i in ['train', 'val', 'test']:
+    p = Process(target=run_proc, args=(i, data, id2name))
     print 'Process %s will start.'%i
     p.start()
     # print 'Process %s end.'%i

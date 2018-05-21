@@ -25,11 +25,14 @@ def clean_words(data):
     sentence_count = 0
     eliminate = 0
     max_w = 30
-    for k in tqdm(range(len(data['caption_entity']))):
+    for k in tqdm(xrange(len(data['caption_entity']))):
         sen = data['caption_entity'][k]
         if not isinstance(sen, unicode):
             enc = detect(sen)['encoding']
-            sen = sen.decode(enc)
+            if enc != 'utf-8':
+                sen = sen.decode(enc).encode('utf-8')
+        else:
+            sen.encode('utf-8')
         filename = data['file_name'][k]
         # skip the no image description
         words = re.split(' ', sen)
@@ -113,11 +116,14 @@ caption_length = []
 topic_length = []
 
 print 'processing...'
-for k in tqdm(range(len(data['caption_entity']))):
+for k in tqdm(xrange(len(data['caption_entity']))):
     sen = data['caption_entity'][k]
     if not isinstance(sen, unicode):
         enc = detect(sen)['encoding']
-        sen = sen.decode(enc
+        if enc != 'utf-8':
+            sen = sen.decode(enc).encode('utf-8')
+    else:
+        sen.encode('utf-8')
     filename = data['file_name'][k]
     topics = data['topic_entity'][k]
     # skip the no image description

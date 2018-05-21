@@ -1,7 +1,9 @@
+# encoding: utf-8
 import numpy as np
 import os
 import cPickle
 from tqdm import tqdm
+from chardet import detect
 
 # generate name2id & id2name dictionary
 name_id_path = './AIchallengeSet.txt'
@@ -23,9 +25,15 @@ rf_cap = open(caption_path, 'r')
 captions = rf_cap.readlines()
 id2caption = {}
 filename2caption = {}
-for i in tqdm(range(len(captions))):
+for i in tqdm(xrange(len(captions))):
     #print captions[i].strip().split('####')[1]
     cap = captions[i].strip().split('#')[-1][2:]
+    if not isinstance(cap, unicode):
+        enc = detect(cap)['encoding']
+        if enc != 'utf-8':
+            cap = cap.decode(enc).encode('utf-8')
+    else:
+        cap.encode('utf-8')
     filename = captions[i].strip().split('#')[0]
     id2caption[str(i)] = cap
     if filename not in filename2caption:

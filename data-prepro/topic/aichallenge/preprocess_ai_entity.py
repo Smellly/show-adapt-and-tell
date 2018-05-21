@@ -46,12 +46,15 @@ for info in data:
         name2id[info_id] = info_id
         id2caption[info_id] = []
 count = 0
-for k in tqdm(range(len(data))):
+for k in tqdm(xrange(len(data))):
     topic = []
     image_id, _, sen = data[k].split('#')
     if not isinstance(sen, unicode):
         enc = detect(sen)['encoding']
-        sen = sen.decode(enc)
+        if enc != 'utf-8':
+            sen = sen.decode(enc).encode('utf-8')
+    else:
+        sen.encode('utf-8')
     sen_t = ''.join(sen[2:].split()) # improtant !
     for word, pos in thul.cut(sen_t):
         # print word, pos

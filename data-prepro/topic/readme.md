@@ -15,6 +15,6 @@
 
 #### AI Challenge Tokenization
 1. Run `python get_split.py` to generate `splits.pkl` and so on.
-2. Run `python preprocess_entity phase.py` 
-3. Run `python preprocess_token.py`
+2. Run `python preprocess_ai_entity.py phase.`
+3. Run `python preprocess_ai_token.py`
 4. Run `python prepro_ai_annotation.py`

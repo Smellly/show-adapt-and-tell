@@ -43,7 +43,7 @@ test_path = './AIchallengetest.txt'
 val_path = './AIchallengeval.txt'
 splits = {}
 splits['train_name'] = open(train_path).read().splitlines()
-print len(open(train_path).read().splitlines())
+print 'num of train:', len(open(train_path).read().splitlines())
 splits['test_name'] = open(test_path).read().splitlines()
 splits['val_name'] = open(val_path).read().splitlines()
 

@@ -13,8 +13,16 @@
 3. Run `python prepro_cub_annotation.py` to generate annotation json file for testing. 
 4. Run `./cub_preprocess.sh` for tokenization.
 
+### Chinese tokenize
+make sure process in utf8
 #### AI Challenge Tokenization
+0. [dataset download](https://challenger.ai/datasets/caption)
 1. Run `python get_split.py` to generate `splits.pkl` and so on.
 2. Run `python preprocess_ai_entity.py phase.`
 3. Run `python preprocess_ai_token.py`
 4. Run `python prepro_ai_annotation.py`
+
+#### weibi Tokenization
+1. Run `python get_weibo_split.py` to generate `splits.pkl` and so on.
+2. Run `python prepro_weibo_annotation.py`
+3. Run `python preprocess_weibo_token.py`

@@ -1,13 +1,12 @@
+# encdoing: utf-8
 import re
 # import json
 import numpy as np
 from tqdm import tqdm
-import pdb
-import os
 import pickle
 import cPickle
-import string
 import sys
+from chardet import detect
 
 def unpickle(p):
     return cPickle.load(open(p,'r'))
@@ -28,6 +27,9 @@ def clean_words(data):
     max_w = 30
     for k in tqdm(range(len(data['caption_entity']))):
         sen = data['caption_entity'][k]
+        if not isinstance(sen, unicode):
+            enc = detect(sen)['encoding']
+            sen = sen.decode(enc)
         filename = data['file_name'][k]
         # skip the no image description
         words = re.split(' ', sen)
@@ -40,10 +42,6 @@ def clean_words(data):
             for word in words:
                 if "\n" in word:
                     word = word.replace("\n", "")
-                for p in string.punctuation:
-                    if p in word:
-                        word = word.replace(p,'')
-                word = word.lower()
                 if word not in dict.keys():
                     dict[word] = idx
                     idx += 1
@@ -117,6 +115,9 @@ topic_length = []
 print 'processing...'
 for k in tqdm(range(len(data['caption_entity']))):
     sen = data['caption_entity'][k]
+    if not isinstance(sen, unicode):
+        enc = detect(sen)['encoding']
+        sen = sen.decode(enc
     filename = data['file_name'][k]
     topics = data['topic_entity'][k]
     # skip the no image description

@@ -1,10 +1,11 @@
+# encoding:utf-8
 import re
 import pickle
 import json
 import numpy as np
 from tqdm import tqdm
-import pdb
 import sys
+from chardet import detect
 
 # Chinense
 import thulac
@@ -48,8 +49,11 @@ count = 0
 for k in tqdm(range(len(data))):
     topic = []
     image_id, _, sen = data[k].split('#')
-    sen = ''.join(sen[2:].split()) # improtant !
-    for word, pos in thul.cut(sen):
+    if not isinstance(sen, unicode):
+        enc = detect(sen)['encoding']
+        sen = sen.decode(enc)
+    sen_t = ''.join(sen[2:].split()) # improtant !
+    for word, pos in thul.cut(sen_t):
         # print word, pos
         if pos in ['n', 'v']:
             topic.append(word)

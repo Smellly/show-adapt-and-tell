@@ -48,6 +48,7 @@ for info in tqdm(data):
         id2caption[info_id] = []
 
 count = 0
+print 'num of split_id %s : %d'%(desired_phase, len(split_id))
 for k in tqdm(xrange(len(data))):
     image_id, _, sen = data[k].split('#')
     if image_id in split_id:

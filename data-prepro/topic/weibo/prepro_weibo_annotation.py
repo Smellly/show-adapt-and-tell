@@ -1,14 +1,11 @@
 # encoding:utf-8
 import json
-import scipy.io as sio
-import numpy as np
 from tqdm import tqdm
-from random import shuffle, seed
-from nltk.tokenize import word_tokenize
-from nltk.tag import pos_tag
 import pickle as pk
 from multiprocessing import Process
-from chardet import detect
+import sys
+sys.path.append('../aichallenge')
+from enuncoding import *
 
 import thulac
 thul = thulac.thulac()
@@ -16,22 +13,16 @@ thul = thulac.thulac()
 def run_proc(model_name, data, id2name):
     test_data = {}
     print("Processing %s_data"%model_name)
-    for i in dataset[model_name+'_id']:
+    for i in tqdm(dataset[model_name+'_id']):
         caps = []
         # For GT
         name = id2name[i]
         count = 0
-        sen = data[i]
-        if not isinstance(sen, unicode):
-            enc = detect(sen)['encoding']
-            if enc != 'utf-8':
-                sen = sen.decode(enc).encode('utf-8')
-        else:
-            sen.encode('utf-8')
+        sen = encode_utf8(data[i])
         topic = []
         for word, pos in thul.cut(''.join(sen.split())):
             if pos in ['n', 'v']:
-                topic.append(word)
+                topic.append(decode_any(word))
 
         tmp = {}
         tmp['filename'] = name

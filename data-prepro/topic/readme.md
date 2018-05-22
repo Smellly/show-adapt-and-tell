@@ -1,4 +1,4 @@
-
+### English tokenize
 #### Captions Tokenization
 1. Clone the [NeuralTalk2](https://github.com/karpathy/neuraltalk2/tree/bd8c9d879f957e1218a8f9e1f9b663ac70375866) repository and head over to the coco/ folder and run the IPython notebook to generate a json file for Karpathy split: `coco_raw.json`.
 2. Run the following script:

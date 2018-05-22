@@ -3,6 +3,9 @@ import numpy as np
 import cPickle
 from tqdm import tqdm
 from chardet import detect
+import sys
+sys.path.append('../aichallenge')
+from enuncoding import *
 
 # Chinese
 import thulac
@@ -31,12 +34,7 @@ for phase in ['train', 'val', 'test']:
         except:
             print item
             continue
-        if not isinstance(sen, unicode):
-            enc = detect(sen)['encoding']
-            if enc != 'utf-8':
-                sen = sen.decode(enc).encode('utf-8')
-        else:
-            sen.encode('utf-8')
+        sen = encode_utf8(sen)
         name2id[name] = name
         id2name[name] = name
         id2caption[name] = sen
@@ -45,7 +43,10 @@ for phase in ['train', 'val', 'test']:
         for word, pos in thul.cut(''.join(sen.split())):
             if pos in ['n', 'v']:
                 # print word, pos
-                topic.append(word)
+                try:
+                    topic.append(decode_any(word))
+                except:
+                    pass
         id2topic[name].append(topic)
         if phase == 'train':
             splits['train_name'].append(name)

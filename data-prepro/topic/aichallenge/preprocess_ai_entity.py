@@ -5,7 +5,8 @@ import json
 import numpy as np
 from tqdm import tqdm
 import sys
-from chardet import detect
+# from chardet import detect
+from enuncoding import *
 
 # Chinense
 import thulac
@@ -27,7 +28,8 @@ else:
     print 'either train or val'
     exit
 
-split_id = load_txt(split_path)
+split_id_list = load_txt(split_path)
+split_id = {x:1 for x in split_id_list}
 
 id2name = {}
 name2id = {}
@@ -36,35 +38,28 @@ description_list = []
 topic_list = []
 img_name = []
 
-# lemmatizer = WordNetLemmatizer()
 data_path = './seg.AIchallenge.caption.txt'
 data = load_txt(data_path)
-for info in data:
+for info in tqdm(data):
     info_id = info.split('#')[0]
     if info_id in split_id:
         id2name[info_id] = info_id
         name2id[info_id] = info_id
         id2caption[info_id] = []
+
 count = 0
 for k in tqdm(xrange(len(data))):
-    topic = []
     image_id, _, sen = data[k].split('#')
-    if not isinstance(sen, unicode):
-        enc = detect(sen)['encoding']
-        if enc != 'utf-8':
-            sen = sen.decode(enc).encode('utf-8')
-    else:
-        sen.encode('utf-8')
-    sen_t = ''.join(sen[2:].split()) # improtant !
-    for word, pos in thul.cut(sen_t):
-        # print word, pos
-        if pos in ['n', 'v']:
-            topic.append(word)
     if image_id in split_id:
         id2caption[image_id].append(sen)
         file_name = id2name[image_id]
         description_list.append(sen)
         img_name.append(file_name)
+        topic = []
+        sen_t = encode_utf8(sen)
+        for word, pos in thul.cut(sen_t):
+            if pos in ['n', 'v']:
+                topic.append(decode_any(word))
         topic_list.append(topic)
     # break
 

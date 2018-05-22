@@ -8,10 +8,10 @@ from tqdm import tqdm
 from random import shuffle, seed
 import pickle as pk
 
-def run_proc(name, data, id2name):
-    print("Processing %s_data"%name)
+def run_proc(model_name, data, id2name):
+    print("Processing %s_data"%model_name)
     test_data = {}
-    for i in tqdm(dataset[name+'_id']):
+    for i in tqdm(dataset[model_name+'_id']):
             caps = []
             # For GT
             name = id2name[i]
@@ -30,14 +30,14 @@ def run_proc(name, data, id2name):
                 count += 1
                 caps.append(tmp)
             test_data[i] = caps
-    print 'dump %d in %s_data'%(len(test_data), name)
-    json.dump(test_data, open('./K_%s_annotation.json'%name, 'w'))
+    print 'dump %d in %s_data'%(len(test_data), model_name)
+    json.dump(test_data, open('./K_%s_annotation.json'%model_name, 'w'))
 
 input_data = 'splits.pkl'
 with open(input_data) as data_file:
     dataset = pk.load(data_file)
 
-phase = sys.argv[1]
+# phase = sys.argv[1]
 skip_num = 0
 val_data = {}
 train_data = {}
@@ -47,7 +47,7 @@ data = pk.load(open('filename2caption.pkl'))
 import thulac
 thul = thulac.thulac()
 
-for i in ['train', 'val', 'test']:
+for i in ['val', 'test']:
     p = Process(target=run_proc, args=(i, data, id2name))
     print 'Process %s will start.'%i
     p.start()

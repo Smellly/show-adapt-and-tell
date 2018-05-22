@@ -1,12 +1,14 @@
 # encdoing: utf-8
 import re
 # import json
+import os
 import numpy as np
 from tqdm import tqdm
 import pickle
 import cPickle
 import sys
-from chardet import detect
+# from chardet import detect
+from enuncoding import *
 
 def unpickle(p):
     return cPickle.load(open(p,'r'))
@@ -26,13 +28,7 @@ def clean_words(data):
     eliminate = 0
     max_w = 30
     for k in tqdm(xrange(len(data['caption_entity']))):
-        sen = data['caption_entity'][k]
-        if not isinstance(sen, unicode):
-            enc = detect(sen)['encoding']
-            if enc != 'utf-8':
-                sen = sen.decode(enc).encode('utf-8')
-        else:
-            sen.encode('utf-8')
+        sen = encode_utf8(data['caption_entity'][k].strip())
         filename = data['file_name'][k]
         # skip the no image description
         words = re.split(' ', sen)
@@ -45,6 +41,10 @@ def clean_words(data):
             for word in words:
                 if "\n" in word:
                     word = word.replace("\n", "")
+                try:
+                    word = decode_any(word)
+                except:
+                    pass
                 if word not in dict.keys():
                     dict[word] = idx
                     idx += 1
@@ -87,14 +87,14 @@ if not os.path.isfile('./dictionary_'+str(thres)+'.npz'):
             idx2word[str(idx)] = k
             idx += 1
 
-    word2idx[u'<BOS>'] = 0
-    idx2word["0"] = u'<BOS>'
-    word2idx[u'<EOS>'] = len(word2idx.keys())
-    idx2word[str(len(idx2word.keys()))] = u'<EOS>'
+    word2idx[u'<BOS>'.encode('utf8')] = 0
+    idx2word["0"] = u'<BOS>'.encode('utf8')
+    word2idx[u'<EOS>'.encode('utf8')] = len(word2idx.keys())
+    idx2word[str(len(idx2word.keys()))] = u'<EOS>'.encode('utf8')
     word2idx[u'<UNK>'] = len(word2idx.keys())
-    idx2word[str(len(idx2word.keys()))] = u'<UNK>'
-    word2idx[u'<NOT>'] = len(word2idx.keys())
-    idx2word[str(len(idx2word.keys()))] = u'<NOT>'
+    idx2word[str(len(idx2word.keys()))] = u'<UNK>'.encode('utf8')
+    word2idx[u'<NOT>'.encode('utf8')] = len(word2idx.keys())
+    idx2word[str(len(idx2word.keys()))] = u'<NOT>'.encode('utf8')
 
     print 'Threshold of word fequency =', thres
     print 'Total words in the dictionary =', len(word2idx.keys())
@@ -117,13 +117,7 @@ topic_length = []
 
 print 'processing...'
 for k in tqdm(xrange(len(data['caption_entity']))):
-    sen = data['caption_entity'][k]
-    if not isinstance(sen, unicode):
-        enc = detect(sen)['encoding']
-        if enc != 'utf-8':
-            sen = sen.decode(enc).encode('utf-8')
-    else:
-        sen.encode('utf-8')
+    sen = encode_utf8(data['caption_entity'][k])
     filename = data['file_name'][k]
     topics = data['topic_entity'][k]
     # skip the no image description
@@ -142,6 +136,10 @@ for k in tqdm(xrange(len(data['caption_entity']))):
     if len(words) <= 30:
         valid = True
         for word in words:
+            try:
+                word = decode_any(word)
+            except:
+                pass
             try:
                 if word != "":
                     idx = int(word2idx[word])

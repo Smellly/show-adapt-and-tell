@@ -28,7 +28,8 @@ def clean_words(data):
     eliminate = 0
     max_w = 30
     for k in tqdm(xrange(len(data['caption_entity']))):
-        sen = encode_utf8(data['caption_entity'][k].strip())
+        # sen = encode_utf8(data['caption_entity'][k].strip())
+        sen = data['caption_entity'][k].strip()
         filename = data['file_name'][k]
         # skip the no image description
         words = re.split(' ', sen)
@@ -45,7 +46,7 @@ def clean_words(data):
                     word = decode_any(word)
                 except:
                     pass
-                if word not in dict.keys():
+                if word not in dict:
                     dict[word] = idx
                     idx += 1
                     freq[word] = 1

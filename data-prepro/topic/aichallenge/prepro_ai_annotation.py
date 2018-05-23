@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 from random import shuffle, seed
 import pickle as pk
+from enuncoding import *
 
 def run_proc(model_name, data, id2name):
     print("Processing %s_data"%model_name)
@@ -25,6 +26,10 @@ def run_proc(model_name, data, id2name):
                 topic = []            
                 for word, pos in thul.cut(''.join(cap.split())):
                     if pos in ['n', 'v']:
+                        try:
+                            word = decode_any(word)
+                        except:
+                            pass
                         topic.append(word)
                 tmp['topic'] = topic
                 count += 1
@@ -47,7 +52,7 @@ data = pk.load(open('filename2caption.pkl'))
 import thulac
 thul = thulac.thulac()
 
-for i in ['val', 'test']:
+for i in ['train', 'val', 'test']:
     p = Process(target=run_proc, args=(i, data, id2name))
     print 'Process %s will start.'%i
     p.start()

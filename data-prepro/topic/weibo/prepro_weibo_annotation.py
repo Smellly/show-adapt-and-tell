@@ -22,7 +22,10 @@ def run_proc(model_name, data, id2name):
         topic = []
         for word, pos in thul.cut(''.join(sen.split())):
             if pos in ['n', 'v']:
-                topic.append(decode_any(word))
+                try:
+                    topic.append(decode_any(word))
+                except:
+                    pass
 
         tmp = {}
         tmp['filename'] = name

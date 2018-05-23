@@ -11,7 +11,8 @@ except:
     import pickle as pkl
 import string
 import sys
-from chardet import detect
+sys.path.append('../aichallenge')
+from enuncoding import *
 
 def unpickle(p):
     return pkl.load(open(p,'r'))
@@ -32,12 +33,6 @@ def clean_words(data):
     for k in tqdm(data.keys()):
         # print k, type(k), data[k]
         sen = data[k][0]['caption'].strip()
-        if not isinstance(sen, unicode):
-            enc = detect(sen)['encoding']
-            if enc != 'utf-8':
-                sen = sen.decode(enc).encode('utf-8')
-        else:
-            sen.encode('utf-8')
         filename = data[k][0]['filename']
         # skip the no image description
         words = re.split(' ', sen)
@@ -46,7 +41,11 @@ def clean_words(data):
         # if n <= max_w:
         sentence_count += 1
         for word in words:
-            if word not in d.keys():
+            try:
+                word = decode_any(word)
+            except:
+                pass
+            if word not in d:
                 d[word] = idx
                 idx += 1
                 freq[word] = 1
@@ -73,37 +72,43 @@ data = load_json(data_path)
 # print type(data), data.keys()
 
 id2name = unpickle('id2name.pkl')
-id2caption = unpickle('id2caption.pkl')
-id2topic = unpickle('id2topic.pkl')
 splits = unpickle('splits.pkl')
 split = splits[phase + '_id']
-thres = 1
+thres = 5
 
-filename_list = []
-caption_list = []
-topic_list = []
-img_id_list = []
-for i in split:
-    # print i
-    sen = id2caption[i]
-    # print sen
-    if not isinstance(sen, unicode):
-        enc = detect(sen)['encoding']
-        if enc != 'utf-8':
-            sen = sen.decode(enc).encode('utf-8')
-    else:
-        sen.encode('utf-8')
-    img_id_list.append(i)
-    filename_list.append(id2name[i])
-    caption_list.append(sen)
-    for tpc in id2topic[i]:
-        topic_list.append(tpc)
-    # print caption_list
-    # print topic_list
-    # break
+if not os.path.isfile('%s_caption_topic_list.pkl'%phase):
+    caption_list = []
+    topic_list = []
+    img_id_list = []
+    filename_list = []
+    id2caption = unpickle('id2caption.pkl')
+    id2topic = unpickle('id2topic.pkl')
+    for i in split:
+        # print i
+        sen = encode_utf8(id2caption[i])
+        # print sen
+        img_id_list.append(i)
+        filename_list.append(id2name[i])
+        caption_list.append(sen)
+        for tpc in id2topic[i]:
+            topic_list.append(tpc)
+    tmp = dict()
+    tmp['caption_list'] = caption_list
+    tmp['topic_list'] = topic_list
+    tmp['img_id_list'] = img_id_list
+    tmp['filename_list']  = filename_list
+    with open('%s_caption_topic_list.pkl'%phase, 'w') as f:
+        pkl.dump(tmp, f)
+else:
+    tmp = unpickle('%s_caption_topic_list.pkl'%phase)
+    caption_list = tmp['caption_list']
+    topic_list = tmp['topic_list']
+    img_id_list = tmp['img_id_list']
+    filename_list = tmp['filename_list']
 
 print 'num of topic_list from splits:', len(topic_list)
 print 'num of caption_list from splits:', len(caption_list)
+assert len(topic_list) == len(caption_list)
 
 # build dictionary
 if not os.path.isfile('./ai&weibo_dictionary_'+str(thres)+'.npz'):
@@ -133,11 +138,10 @@ if not os.path.isfile('./ai&weibo_dictionary_'+str(thres)+'.npz'):
             idx += 1
         elif k not in word2idx:
             underThresh += 1
-
+    
     print 'Threshold of word fequency =', thres
     print 'CUB words in the dictionary =', len(word2idx.keys()) - tmp
     np.savez('./ai&weibo_dictionary_'+str(thres), word2idx=word2idx, idx2word=idx2word)
-
 else:
     tem = np.load('./ai&weibo_dictionary_'+str(thres)+'.npz')
     word2idx = tem['word2idx'].item(0)
@@ -160,13 +164,7 @@ img_id_list_new = []
 
 for k in tqdm(xrange(len(caption_list))):
     # print k, caption_list[k].strip()
-    sen = caption_list[k].strip()
-    if not isinstance(sen, unicode):
-        enc = detect(sen)['encoding']
-        if enc != 'utf-8':
-            sen = sen.decode(enc).encode('utf-8')
-    else:
-        sen.encode('utf-8')
+    sen = encode_utf8(caption_list[k].strip())
     img_id = img_id_list[k]
     filename = filename_list[k]
     topics = topic_list[k]
@@ -181,13 +179,19 @@ for k in tqdm(xrange(len(caption_list))):
         valid = True
         for word in words:
             try:
+                word = decode_any(word)
+            except:
+                pass
+            try:
                 idx = int(word2idx[word])
                 tokenized_sent[count] = idx
                 count += 1
             except KeyError:
                 # if contain <UNK> then drop the sentence in train phase
-                print k, sen
-                print word
+                # print k, sen, detect(sen)
+                # print word 
+                # if not isinstance(word, unicode):
+                #     print detect(word)
                 valid = False
                 break
         # add <EOS>
@@ -231,7 +235,6 @@ tokenized_caption_info['filename_list'] = np.asarray(filename_list_new)
 tokenized_caption_info['img_id_list'] = np.asarray(img_id_list_new)
 tokenized_caption_info['raw_caption_list'] = np.asarray(caption_list_new)
 tokenized_caption_info['raw_topic_list'] = np.asarray(topic_list_new)
-
 
 with open('./tokenized_'+phase+'_caption.pkl', 'w') as outfile:
     pkl.dump(tokenized_caption_info, outfile)

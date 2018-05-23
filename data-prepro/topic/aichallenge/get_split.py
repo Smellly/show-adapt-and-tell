@@ -10,7 +10,7 @@ name_id_path = './AIchallengeSet.txt'
 name_id = open(name_id_path).read().splitlines()
 name2id = {}
 id2name = {}
-for ind, i in xrange(len(name_id)):
+for ind, i in enumerate(name_id):
     name2id[i] = ind
     id2name[ind] = i
 

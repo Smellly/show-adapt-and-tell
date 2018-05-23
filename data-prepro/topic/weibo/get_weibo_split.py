@@ -38,8 +38,8 @@ for phase in ['train', 'val', 'test']:
         sen = encode_utf8(sen)
         name2id[name] = count
         id2name[count] = name
-        id2caption[name] = sen
-        id2topic[name] = []
+        id2caption[count] = sen
+        id2topic[count] = []
         topic = []
         for word, pos in thul.cut(''.join(sen.split())):
             if pos in ['n', 'v']:
@@ -48,16 +48,16 @@ for phase in ['train', 'val', 'test']:
                     topic.append(decode_any(word))
                 except:
                     pass
-        id2topic[name].append(topic)
+        id2topic[count].append(topic)
         if phase == 'train':
             splits['train_name'].append(name)
-            splits['train_id'].append(name)
+            splits['train_id'].append(count)
         elif phase == 'val':
             splits['val_name'].append(name)
-            splits['val_id'].append(name)
+            splits['val_id'].append(count)
         elif phase == 'test':
             splits['test_name'].append(name)
-            splits['test_id'].append(name)
+            splits['test_id'].append(count)
         count += 1
 
 print 'len of id2topic:', len(id2topic)

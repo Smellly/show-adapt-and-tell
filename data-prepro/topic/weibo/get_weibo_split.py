@@ -23,6 +23,7 @@ splits['test_name'] = []
 splits['train_id'] = []
 splits['val_id'] = []
 splits['test_id'] = []
+count = 0
 
 for phase in ['train', 'val', 'test']:
     print 'phase : %s'%phase
@@ -35,8 +36,8 @@ for phase in ['train', 'val', 'test']:
             print item
             continue
         sen = encode_utf8(sen)
-        name2id[name] = name
-        id2name[name] = name
+        name2id[name] = count
+        id2name[count] = name
         id2caption[name] = sen
         id2topic[name] = []
         topic = []
@@ -57,6 +58,7 @@ for phase in ['train', 'val', 'test']:
         elif phase == 'test':
             splits['test_name'].append(name)
             splits['test_id'].append(name)
+        count += 1
 
 print 'len of id2topic:', len(id2topic)
 print 'len of id2caption:', len(id2caption)

@@ -10,9 +10,9 @@ name_id_path = './AIchallengeSet.txt'
 name_id = open(name_id_path).read().splitlines()
 name2id = {}
 id2name = {}
-for i in name_id:
-    name2id[i] = i
-    id2name[i] = i
+for ind, i in xrange(len(name_id)):
+    name2id[i] = ind
+    id2name[ind] = i
 
 cPickle.dump(name2id, open('name2id.pkl', 'wb'))
 cPickle.dump(id2name, open('id2name.pkl', 'wb'))
@@ -27,6 +27,7 @@ id2caption = {}
 filename2caption = {}
 for i in tqdm(xrange(len(captions))):
     #print captions[i].strip().split('####')[1]
+    name = captions[i].strip().split('#')[0]
     cap = captions[i].strip().split('#')[-1][2:]
     if not isinstance(cap, unicode):
         enc = detect(cap)['encoding']
@@ -35,7 +36,7 @@ for i in tqdm(xrange(len(captions))):
     else:
         cap.encode('utf-8')
     filename = captions[i].strip().split('#')[0]
-    id2caption[str(i)] = cap
+    id2caption[name2id[name]] = cap
     if filename not in filename2caption:
         filename2caption[filename] = [cap]
     else:

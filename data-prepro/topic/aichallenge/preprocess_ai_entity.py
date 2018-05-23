@@ -23,6 +23,8 @@ if desired_phase == 'train':
     split_path = './AIchallengetrain.txt'
 elif desired_phase == 'val':
     split_path = './AIchallengeval.txt'
+elif desired_phase == 'test':
+    split_path = './AIchallengetest.txt'
 else:
     print 'error phase'
     print 'either train or val'

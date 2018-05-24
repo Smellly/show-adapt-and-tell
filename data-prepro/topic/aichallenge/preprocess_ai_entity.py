@@ -30,32 +30,34 @@ else:
     print 'either train or val'
     exit
 
-split_id_list = load_txt(split_path)
-split_id = {x:1 for x in split_id_list}
+split_name_list = load_txt(split_path)
+split_name = {x:1 for x in split_name_list}
 
-id2name = {}
-name2id = {}
-id2caption = {}
+id2name = pickle.load(open('./id2name.pkl'))
+name2id = pickle.load(open('./name2id.pkl'))
+id2caption = pickle.load(open('./id2caption.pkl'))
 description_list = []
 topic_list = []
 img_name = []
 
 data_path = './seg.AIchallenge.caption.txt'
 data = load_txt(data_path)
+'''
 for info in tqdm(data):
     info_id = info.split('#')[0]
-    if info_id in split_id:
-        id2name[info_id] = info_id
-        name2id[info_id] = info_id
+    if info_id in split_name:
+        id2name[name2id_all[info_id]] = info_id
+        name2id[info_id] = name2id_all[info_id]
         id2caption[info_id] = []
+'''
 
 count = 0
-print 'num of split_id %s : %d'%(desired_phase, len(split_id))
+print 'num of split_name %s : %d'%(desired_phase, len(split_name))
 for k in tqdm(xrange(len(data))):
-    image_id, _, sen = data[k].split('#')
-    if image_id in split_id:
-        id2caption[image_id].append(sen)
-        file_name = id2name[image_id]
+    file_name, _, sen = data[k].split('#')
+    if file_name in split_name:
+        image_id = name2id[file_name]
+        # id2caption[image_id].append(sen)
         description_list.append(sen)
         img_name.append(file_name)
         topic = []

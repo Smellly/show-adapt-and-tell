@@ -314,13 +314,14 @@ class G_pretrained():
 
         if split == 'test':
             image_feature, image_id, test_annotation = self.dataset.get_source_test_for_eval()
-            num_eval = len(test_annotation)
+            num_eval = len(image_id)
         elif split == 'target_test':
             image_feature, image_id, test_annotation = self.dataset.get_test_for_eval()
-            num_eval = len(test_annotation)
+            num_eval = len(image_id)
         elif split == 'train':
             image_feature, img_name =  self.dataset.get_train_for_eval(50000)
             num_eval = 50000
+        print '### num_eval : ', num_eval
 
         samples = []
         samples_index = np.full([len(image_feature), self.max_words], self.NOT)
@@ -330,6 +331,9 @@ class G_pretrained():
             prediction = self._predict_words_sample
         for i in range(num_eval//100):
             image_feature_one = image_feature[i*100:(i+1)*100]
+            image_feature_length = len(image_feature_one)
+            if image_feature_length < 100:
+                image_feature_one = image_feature[-100:]
             # print 'img_feat_one:', image_feature_one
             # print 'img_id:', image_id[i*100:(i+1)*100]
             # print 'images_one shape:', self.images_one.shape
@@ -339,13 +343,12 @@ class G_pretrained():
                             {
                                 self.images_one: image_feature_one,
                             })
-            for j in range(100):
+            for j in range(100-image_feature_length, 100):
                 samples.append(
                         [self.dataset.decode(predict_words[j, :], type='string', remove_END=True)[0]])
                 sample_index = self.dataset.decode(
                         predict_words[j, :], type='index', remove_END=False)[0]
-                samples_index[i*100+j][:len(sample_index)] = sample_index
-                #samples_index.append(self.dataset.decode(predict_words[j, :], type='index')[0])
+                samples_index[i*100+j-100+image_feature_length][:len(sample_index)] = sample_index
         if split == 'train':
             # save for negative sample  
             samples = np.asarray(samples)
@@ -367,7 +370,6 @@ class G_pretrained():
             #np.savez("result_%s"%str(count), meteor_pd=meteor_pd, meteor_id=meteor_id)
             # coco(groundTruth), cocoRes, cocoImgIds
             scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
-            # scorer.evaluate(verbose=True)               
             scorer.evaluate()               
 
     def save(self, checkpoint_dir, step):

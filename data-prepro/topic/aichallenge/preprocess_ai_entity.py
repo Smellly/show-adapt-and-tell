@@ -5,6 +5,10 @@ import json
 import numpy as np
 from tqdm import tqdm
 import sys
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
 # from chardet import detect
 from enuncoding import *
 
@@ -55,6 +59,7 @@ count = 0
 print 'num of split_name %s : %d'%(desired_phase, len(split_name))
 for k in tqdm(xrange(len(data))):
     file_name, _, sen = data[k].split('#')
+    sen = sen[2:]
     if file_name in split_name:
         image_id = name2id[file_name]
         # id2caption[image_id].append(sen)

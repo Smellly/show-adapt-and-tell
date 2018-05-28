@@ -1,5 +1,10 @@
 # encoding: utf-8
+import sys
 from chardet import detect
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
 
 def encode_utf8(sen):
     if not isinstance(sen, unicode):

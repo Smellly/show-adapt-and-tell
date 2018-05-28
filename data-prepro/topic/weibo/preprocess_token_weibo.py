@@ -5,14 +5,17 @@ import numpy as np
 from tqdm import tqdm
 # import pdb
 import os
+import sys
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
+
 try: 
     import cPickle as pkl
 except:
     import pickle as pkl
 import string
-import sys
-sys.path.append('../aichallenge')
-from enuncoding import *
 
 def unpickle(p):
     return pkl.load(open(p,'r'))
@@ -35,16 +38,13 @@ def clean_words(data):
         sen = data[k][0]['caption'].strip()
         filename = data[k][0]['filename']
         # skip the no image description
-        words = re.split(' ', sen)
+        words = sen.split()
         # pop the last u'.'
         # n = len(words)
         # if n <= max_w:
         sentence_count += 1
         for word in words:
-            try:
-                word = decode_any(word)
-            except:
-                pass
+            word = word.decode('utf-8') 
             if word not in d:
                 d[word] = idx
                 idx += 1
@@ -85,7 +85,7 @@ if not os.path.isfile('%s_caption_topic_list.pkl'%phase):
     id2topic = unpickle('id2topic.pkl')
     for i in split:
         # print i
-        sen = encode_utf8(id2caption[i])
+        sen = id2caption[i]
         # print sen
         img_id_list.append(i)
         filename_list.append(id2name[i])
@@ -123,7 +123,7 @@ if not os.path.isfile('./ai&weibo_dictionary_'+str(thres)+'.npz'):
 
     print 'CUB words in the K_clean_words =', len(d.keys())
     
-    tem = np.load('../aichallenge/dictionary_5.npz')
+    tem = np.load('../aichallenge_subset/dictionary_5.npz')
     word2idx = tem['word2idx'].item(0)
     idx2word = tem['idx2word'].item(0)
     tmp = len(word2idx.keys())
@@ -164,11 +164,11 @@ img_id_list_new = []
 
 for k in tqdm(xrange(len(caption_list))):
     # print k, caption_list[k].strip()
-    sen = encode_utf8(caption_list[k].strip())
+    sen = caption_list[k].strip()
     img_id = img_id_list[k]
     filename = filename_list[k]
     topics = topic_list[k]
-    words = re.split(' ', sen)
+    words = sen.split()
     # print words, topics
     count = 0
     tokenized_sent = np.ones([31],dtype=int) * word2idx[u'<NOT>']  # initialize as <NOT>
@@ -178,10 +178,7 @@ for k in tqdm(xrange(len(caption_list))):
     if len(words) <= 30:
         valid = True
         for word in words:
-            try:
-                word = decode_any(word)
-            except:
-                pass
+            word = word.decode('utf-8')
             try:
                 idx = int(word2idx[word])
                 tokenized_sent[count] = idx

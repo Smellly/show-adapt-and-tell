@@ -7,6 +7,10 @@ from tqdm import tqdm
 import pickle
 import cPickle
 import sys
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
 # from chardet import detect
 from enuncoding import *
 
@@ -88,14 +92,14 @@ if not os.path.isfile('./dictionary_'+str(thres)+'.npz'):
             idx2word[str(idx)] = k
             idx += 1
 
-    word2idx[u'<BOS>'.encode('utf8')] = 0
-    idx2word["0"] = u'<BOS>'.encode('utf8')
-    word2idx[u'<EOS>'.encode('utf8')] = len(word2idx.keys())
-    idx2word[str(len(idx2word.keys()))] = u'<EOS>'.encode('utf8')
+    word2idx[u'<BOS>'] = 0
+    idx2word["0"] = u'<BOS>')
+    word2idx[u'<EOS>'] = len(word2idx.keys())
+    idx2word[str(len(idx2word.keys()))] = u'<EOS>'
     word2idx[u'<UNK>'] = len(word2idx.keys())
-    idx2word[str(len(idx2word.keys()))] = u'<UNK>'.encode('utf8')
-    word2idx[u'<NOT>'.encode('utf8')] = len(word2idx.keys())
-    idx2word[str(len(idx2word.keys()))] = u'<NOT>'.encode('utf8')
+    idx2word[str(len(idx2word.keys()))] = u'<UNK>'
+    word2idx[u'<NOT>'] = len(word2idx.keys())
+    idx2word[str(len(idx2word.keys()))] = u'<NOT>'
 
     print 'Threshold of word fequency =', thres
     print 'Total words in the dictionary =', len(word2idx.keys())
@@ -156,7 +160,7 @@ for k in tqdm(xrange(len(data['caption_entity']))):
                     tokenized_sent[count] = int(word2idx[u'<UNK>'])
                     count += 1
         if valid:
-            tokenized_sent[count] = (word2idx["<EOS>"]) # the end of a sentence
+            tokenized_sent[count] = (word2idx[u'<EOS>']) # the end of a sentence
             caption_list.append(caption)
             length = np.sum((tokenized_sent!=0)+0)
             tokenized_caption_list.append(tokenized_sent)

@@ -4,6 +4,11 @@ import os
 import cPickle
 from tqdm import tqdm
 from chardet import detect
+import sys
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
 
 # generate name2id & id2name dictionary
 name_id_path = './AIchallengeSet.txt'

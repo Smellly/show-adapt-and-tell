@@ -5,6 +5,10 @@ from tqdm import tqdm
 from chardet import detect
 import sys
 sys.path.append('../aichallenge')
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
 from enuncoding import *
 
 # Chinese

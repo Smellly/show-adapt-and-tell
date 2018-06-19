@@ -1,3 +1,4 @@
+# encoding:utf-8
 __author__ = 'tylin'
 from tokenizer.ptbtokenizer import PTBTokenizer
 from bleu.bleu import Bleu
@@ -5,6 +6,12 @@ from meteor.meteor import Meteor
 from rouge.rouge import Rouge
 from cider.cider import Cider
 from spice.spice import Spice
+
+import sys
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
 
 class COCOEvalCap:
     def __init__(self, coco, cocoRes, cocoImgIds):

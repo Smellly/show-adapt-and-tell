@@ -17,6 +17,7 @@ thul = thulac.thulac()
 def run_proc(model_name, data, id2name):
     test_data = {}
     print("Processing %s_data"%model_name)
+    tag = False
     for i in tqdm(dataset[model_name+'_id']):
         caps = []
         # For GT
@@ -27,9 +28,12 @@ def run_proc(model_name, data, id2name):
         for word, pos in thul.cut(''.join(sen.split())):
             if pos in ['n', 'v']:
                 try:
-                    topic.append(decode_any(word))
+                    topic.append(decode_utf8(word))
                 except:
-                    pass
+                    tag = True
+                    print word, word.__class__, isinstance(word, unicode)
+        if tag:
+            break
 
         tmp = {}
         tmp['filename'] = name

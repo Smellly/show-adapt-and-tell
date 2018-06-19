@@ -1,3 +1,4 @@
+# encode: utf-8
 from __future__ import division
 import os
 import time
@@ -15,8 +16,11 @@ from eval import COCOEvalCap
 def calculate_loss_and_acc_with_logits(predictions, logits, label, l2_loss, l2_reg_lambda):
     # Calculate Mean cross-entropy loss
     with tf.variable_scope("loss"):
+        # print 'logits:', logits.shape, tf.squeeze(logits).shape
+        # print 'labels:', label.shape
+        #       logits=tf.squeeze(logits), 
         losses = tf.nn.softmax_cross_entropy_with_logits(
-                logits=tf.squeeze(logits), 
+                logits=logits, 
                 labels=label)
         D_loss = tf.reduce_mean(losses) + l2_reg_lambda * l2_loss
     with tf.variable_scope("accuracy"):
@@ -61,12 +65,14 @@ class SeqGAN():
         self.num_filters_total = sum(self.num_filters)
         self.num_classes = D_info['num_classes']
 	self.num_domains = 3
+        self.num_sentiment = 2
         self.l2_reg_lambda = D_info['l2_reg_lambda']
 
 	
 	# D placeholder
 	# self.images = tf.placeholder('float32', [self.batch_size, self.img_dims])
 	self.images = tf.placeholder('int32', [self.batch_size, self.img_dims], name='d/images')
+	self.senti_label = tf.placeholder('int32', [self.batch_size, self.num_sentiment], name='d_senti/senti_label')
 	self.right_text = tf.placeholder('int32', [self.batch_size, self.max_words], name='d/right_text')
 	self.wrong_text = tf.placeholder('int32', [self.batch_size, self.max_words], name='d/wrong_text')
 	self.wrong_length = tf.placeholder('int32', [self.batch_size], name="wrong_length")
@@ -85,6 +91,7 @@ class SeqGAN():
 	self.T_optim = tf.train.AdamOptimizer(conf.learning_rate)
 	self.Domain_image_optim = tf.train.AdamOptimizer(conf.learning_rate)
 	self.Domain_text_optim = tf.train.AdamOptimizer(conf.learning_rate)
+	self.Senti_classify_optim = tf.train.AdamOptimizer(conf.learning_rate)
         D_info["sentence_length"] = self.max_words
         self.D_info = D_info
 
@@ -125,15 +132,36 @@ class SeqGAN():
 	images_tile_transpose = tf.transpose(images_tile, [1,0,2])      # S,B,I
 	images_tile_transpose = tf.tile(tf.expand_dims(images_tile_transpose, 0), [rollout_num,1,1,1])  #R,S,B,I
 	images_reshape = tf.reshape(images_tile_transpose, [-1, self.img_dims]) #R*S*B,I
+        # print 'rollout:', rollout.shape
+        # print 'self.senti_label:', self.senti_label.shape
+        # print 'rollout_length:', rollout_length.shape
+        # print 'images_reshape:', images_reshape.shape
+        senti_label = tf.tile(self.senti_label, [self.max_words*rollout_num, 1])
+        # print 'senti_label:', senti_label.shape
 
         # params: batch_size, images, text, length, name="discriminator", reuse=False):
 	D_rollout_vqa_softmax, D_rollout_logits_vqa = self.discriminator(
                 rollout_size, images_reshape, rollout, rollout_length, name="D", reuse=False)
+
 	D_rollout_text, D_rollout_text_softmax, D_logits_rollout_text, \
                 l2_loss_rollout_text = self.text_discriminator(
                     rollout, D_info, name="D_text", reuse=False)
+
+	D_rollout_senti, D_rollout_senti_softmax, D_rollout_logits_senti, l2_loss_rollout_senti = \
+                self.sentiment_discriminator(
+                        rollout, D_info, name="D_sentiment", reuse=False)
+
+        # print 'D_rollout_senti:', D_rollout_senti.shape
+        # print 'D_rollout_logits_senti:', D_rollout_logits_senti.shape
+        D_rollout_acc_senti = tf.equal(D_rollout_senti, tf.argmax(senti_label, 1))
+
         # tf.mul is deprecated
 	reward = tf.multiply(D_rollout_vqa_softmax[:,0], D_rollout_text_softmax[:,0]) # S*B, 1
+	# reward = D_rollout_vqa_softmax[:,0] # S*B, 1
+        # print 'reward :', reward.shape
+        # print 'acc_senti : ', D_rollout_acc_senti.shape
+        # print 'acc_senti : ', tf.cast(D_rollout_acc_senti, tf.float32)
+	reward = tf.multiply(reward, tf.cast(D_rollout_acc_senti, tf.float32)) # S*B, 1
 
 	reward = tf.reshape(reward, [rollout_num, -1])  # R, S*B
 	reward = tf.reduce_mean(reward, 0)      # S*B
@@ -205,39 +233,90 @@ class SeqGAN():
 
 
 	self.D_loss = D_fake_loss + D_right_loss + D_wrong_loss
+
 	###################################################
 	# Text Domain Classifier
 	###################################################
-	D_src_text, D_src_text_softmax, D_logits_src_text, l2_loss_src_text = self.text_discriminator(
-                self.src_text, D_info, name="D_text", reuse=True)
-	D_tgt_text, D_tgt_text_softmax, D_logits_tgt_text, l2_loss_tgt_text = self.text_discriminator(
-                self.tgt_text, D_info, name="D_text", reuse=True)
-	D_fake_text, D_fake_text_softmax, D_logits_fake_text, l2_loss_fake_text = self.text_discriminator(
-                self.predict_words_sample, D_info, name="D_text", reuse=True)
+	# D_src_text, D_src_text_softmax, D_logits_src_text, l2_loss_src_text = \
+        #         self.text_discriminator(
+        #             self.src_text, D_info, name="D_text", reuse=True)
 
-        #                       D_logits_src_text, tf.concat(1,(tf.zeros((self.batch_size,1)), tf.zeros((self.batch_size,1)),  
-	D_src_loss_text, D_src_acc_text = calculate_loss_and_acc_with_logits(
-                D_src_text,
-                                D_logits_src_text, tf.concat(
-                                    (tf.zeros((self.batch_size,1)), tf.zeros((self.batch_size,1)),  
-					tf.ones((self.batch_size,1))),
-                                    1), 
-                                l2_loss_src_text, D_info["l2_reg_lambda"])
-	D_fake_loss_text, D_fake_acc_text = calculate_loss_and_acc_with_logits(D_fake_text,
-				D_logits_fake_text, tf.concat(
-                                    (tf.zeros((self.batch_size,1)), tf.ones((self.batch_size,1)),
-					tf.zeros((self.batch_size,1))),
-                                    1), 
-                                l2_loss_fake_text, D_info["l2_reg_lambda"])
-        D_tgt_loss_text, D_tgt_acc_text = calculate_loss_and_acc_with_logits(D_tgt_text,
-                                D_logits_tgt_text, tf.concat(
-                                    (tf.ones((self.batch_size,1)), tf.zeros((self.batch_size,1)),
-                                        tf.zeros((self.batch_size,1))),
-                                    1), 
-                                l2_loss_tgt_text, D_info["l2_reg_lambda"])
-	self.D_text_loss = D_src_loss_text + D_tgt_loss_text + D_fake_loss_text
+	D_tgt_text, D_tgt_text_softmax, D_logits_tgt_text, l2_loss_tgt_text = \
+                self.text_discriminator(
+                    self.tgt_text, D_info, name="D_text", reuse=True)
+                
+	D_fake_text, D_fake_text_softmax, D_logits_fake_text, l2_loss_fake_text = \
+                self.text_discriminator(
+                    self.predict_words_sample, D_info, name="D_text", reuse=True)
 
+	# D_src_loss_text, D_src_acc_text = calculate_loss_and_acc_with_logits(
+        #         D_src_text,
+        #         D_logits_src_text, 
+        #         tf.concat(
+        #             (
+        #                 tf.zeros((self.batch_size,1)), 
+        #                 tf.zeros((self.batch_size,1)),  
+        #                 tf.ones((self.batch_size,1))),
+        #             1), 
+        #         l2_loss_src_text, 
+        #         D_info["l2_reg_lambda"])
+	D_fake_loss_text, D_fake_acc_text = calculate_loss_and_acc_with_logits(
+                D_fake_text,
+                D_logits_fake_text, 
+                tf.concat(
+                    (
+                        tf.zeros((self.batch_size,1)), 
+                        tf.ones((self.batch_size,1)),
+                        tf.zeros((self.batch_size,1))),
+                    1), 
+                l2_loss_fake_text, 
+                D_info["l2_reg_lambda"])
+        D_tgt_loss_text, D_tgt_acc_text = calculate_loss_and_acc_with_logits(
+                D_tgt_text,
+                D_logits_tgt_text, 
+                tf.concat(
+                    (
+                        tf.ones((self.batch_size,1)), 
+                        tf.zeros((self.batch_size,1)),
+                        tf.zeros((self.batch_size,1))),
+                    1), 
+                l2_loss_tgt_text, 
+                D_info["l2_reg_lambda"])
+	# self.D_text_loss = D_src_loss_text + D_tgt_loss_text + D_fake_loss_text
+	self.D_text_loss = D_tgt_loss_text + D_fake_loss_text
 
+        ###################################################
+        # Sentiment Classifier
+        ###################################################
+	# D_src_senti, D_src_senti_softmax, D_src_logits_senti, l2_loss_src_senti = \
+        #         self.sentiment_discriminator(
+        #                 self.src_text, D_info, name="D_sentiment", reuse=True)
+
+	D_tgt_senti, D_tgt_senti_softmax, D_tgt_logits_senti, l2_loss_tgt_senti = \
+                self.sentiment_discriminator(
+                        self.tgt_text, D_info, name="D_sentiment", reuse=True)
+
+	D_fake_senti, D_fake_senti_softmax, D_fake_logits_senti, l2_loss_fake_senti = \
+                self.sentiment_discriminator(
+                        self.predict_words_sample, D_info, name="D_sentiment", reuse=True)
+
+	self.D_senti_tgt_loss, D_acc_tgt_senti = calculate_loss_and_acc_with_logits(
+                D_tgt_senti,
+                D_tgt_logits_senti, 
+                self.senti_label,
+                l2_loss_tgt_senti, 
+                D_info["l2_reg_lambda"]
+            )
+
+	self.D_senti_fake_loss, D_acc_fake_senti = calculate_loss_and_acc_with_logits(
+                D_fake_senti,
+                D_fake_logits_senti, 
+                self.senti_label,
+                l2_loss_fake_senti, 
+                D_info["l2_reg_lambda"]
+            )
+
+        self.D_senti_loss = self.D_senti_tgt_loss + self.D_senti_fake_loss
 	########################## tensorboard summary:########################
         # D_real_sum, D_fake_sum = the sigmoid output
         # D_real_loss_sum, D_fake_loss_sum = the loss for different kinds input
@@ -247,31 +326,41 @@ class SeqGAN():
                 tf.reduce_sum(log_probs_action_picked_list)/tf.reduce_sum(self.predict_mask))
 	self.total_reward_sum = tf.summary.scalar("total_mean_reward", tf.reduce_mean(self.rollout_reward))
 	self.logprobs_dist_sum = tf.summary.histogram("log_probs", log_probs_action_picked_list)
-        self.D_src_loss_text_sum = tf.summary.scalar("D_src_loss_text", D_src_loss_text)
-        self.D_src_acc_text_sum = tf.summary.scalar("D_src_acc_text", D_src_acc_text)
+        # self.D_src_loss_text_sum = tf.summary.scalar("D_src_loss_text", D_src_loss_text)
+        # self.D_src_acc_text_sum = tf.summary.scalar("D_src_acc_text", D_src_acc_text)
         self.D_tgt_loss_text_sum = tf.summary.scalar("D_tgt_loss_text", D_tgt_loss_text)
         self.D_tgt_acc_text_sum = tf.summary.scalar("D_tgt_acc_text", D_tgt_acc_text)
         self.D_fake_loss_text_sum = tf.summary.scalar("D_fake_loss_text", D_fake_loss_text)
-        self.D_fake_loss_acc_sum = tf.summary.scalar("D_fake_acc_text", D_fake_acc_text)
-        self.D_text_loss_sum = tf.summary.scalar("D_text_loss", self.D_text_loss)
+        self.D_fake_acc_text_sum = tf.summary.scalar("D_fake_acc_text", D_fake_acc_text)
 	self.D_fake_loss_sum = tf.summary.scalar("D_fake_loss", D_fake_loss)
 	self.D_wrong_loss_sum = tf.summary.scalar("D_wrong_loss", D_wrong_loss)
 	self.D_right_loss_sum = tf.summary.scalar("D_right_loss", D_right_loss)
+        self.D_senti_loss_sum = tf.summary.scalar("D_senti_loss", self.D_senti_loss)
+        self.D_senti_tgt_acc_sum = tf.summary.scalar("D_senti_tgt_acc", D_acc_tgt_senti)
+        self.D_senti_fake_acc_sum = tf.summary.scalar("D_senti_fake_acc", D_acc_fake_senti)
 	self.D_loss_sum = tf.summary.scalar("D_loss", self.D_loss)
+        self.D_text_loss_sum = tf.summary.scalar("D_text_loss", self.D_text_loss)
 	self.G_loss_sum = tf.summary.scalar("G_loss", self.G_loss)
         self.D_summary = tf.summary.merge([
             self.D_fake_loss_sum,
             self.D_wrong_loss_sum,
             self.D_right_loss_sum,
-            self.D_loss_sum] )
+            self.D_loss_sum] 
+        )
+
+        #     self.D_src_loss_text_sum, 
+        #     self.D_src_acc_text_sum,
         self.D_text_summary = tf.summary.merge([
-            self.D_src_loss_text_sum, 
-            self.D_src_acc_text_sum,
             self.D_tgt_loss_text_sum,
             self.D_tgt_acc_text_sum,
             self.D_fake_loss_text_sum,
             self.D_fake_acc_text_sum,
             self.D_text_loss_sum
+            ])
+        self.D_senti_summary = tf.summary.merge([
+                self.D_senti_loss_sum,
+                self.D_senti_tgt_acc_sum,
+                self.D_senti_fake_acc_sum
             ])
         self.G_summary = tf.summary.merge([
             self.G_loss_sum,
@@ -406,6 +495,62 @@ class SeqGAN():
             # Create a convolution + maxpool layer for each filter size
             pooled_outputs = []
             # Keeping track of l2 regularization loss (optional)
+            l2_loss = tf.constant(0.0)
+            for filter_size, num_filter in zip(info["filter_sizes"], info["num_filters"]):
+                with tf.variable_scope("conv-maxpool-%s" % filter_size):
+                    # Convolution Layer
+                    filter_shape = [filter_size, hidden_size, 1, num_filter]
+                    W = tf.get_variable("W", filter_shape, "float32", random_uniform_init)
+                    b = tf.get_variable("b", [num_filter], "float32", random_uniform_init)
+                    conv = tf.nn.conv2d(
+                        embedded_chars_expanded,
+                        W,
+                        strides=[1, 1, 1, 1],
+                        padding="VALID",
+                        name="conv")
+                    # Apply nonlinearity
+                    h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
+                    # Maxpooling over the outputs
+                    pooled = tf.nn.max_pool(
+                        h,
+                        ksize=[1, info["sentence_length"] - filter_size + 1, 1, 1],
+                        strides=[1, 1, 1, 1],
+                        padding='VALID',
+                        name="pool")
+                    pooled_outputs.append(pooled)
+            # h_pool = tf.concat(3, pooled_outputs)      # B,1,1,total filters
+            h_pool = tf.concat(pooled_outputs, 3)      # B,1,1,total filters
+            h_pool_flat = tf.reshape(h_pool, [-1, info["num_filters_total"]])        # b, total filters
+
+            # Add highway
+            with tf.variable_scope("highway"):
+                h_highway = highway(h_pool_flat, h_pool_flat.get_shape()[1], 1, 0)
+            with tf.variable_scope("output"):
+                l2_loss += tf.nn.l2_loss(output_W)
+                l2_loss += tf.nn.l2_loss(output_b)
+                logits = tf.nn.xw_plus_b(h_highway, output_W, output_b, name="logits")
+                logits_softmax = tf.nn.softmax(logits)
+                predictions = tf.argmax(logits_softmax, 1, name="predictions")
+            return predictions, logits_softmax, logits, l2_loss
+
+    def sentiment_discriminator(self, sentence, info, name="sentiment_discriminator", reuse=False):
+        ### sentence: B, S
+        hidden_size = self.D_hidden_size
+        random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
+        with tf.variable_scope(name):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
+            with tf.device('/cpu:0'), tf.variable_scope("embedding"):
+                word_emb_W = tf.get_variable("word_emb_W", [self.dict_size, hidden_size], "float32", random_uniform_init)
+                embedded_chars = tf.nn.embedding_lookup(word_emb_W, sentence) # B,S,H
+                embedded_chars_expanded = tf.expand_dims(embedded_chars, -1)      # B,S,H,1
+            with tf.variable_scope("output"):
+                output_W = tf.get_variable("output_W", [info["num_filters_total"], self.num_sentiment],
+                                                "float32", random_uniform_init)
+                output_b = tf.get_variable("output_b", [self.num_sentiment], "float32", random_uniform_init)
+            # Create a convolution + maxpool layer for each filter size
+            pooled_outputs = []
+            # Keeping track of l2 *regularization* loss (optional)
             l2_loss = tf.constant(0.0)
             for filter_size, num_filter in zip(info["filter_sizes"], info["num_filters"]):
                 with tf.variable_scope("conv-maxpool-%s" % filter_size):
@@ -775,9 +920,11 @@ class SeqGAN():
     def train(self):
         print "--------------------------model train---------------------------"
 	self.G_train_op = self.G_optim.minimize(self.G_loss, var_list=self.G_params)
-	self.G_hat_train_op = self.T_optim.minimize(self.teacher_loss, var_list=self.G_params)
+	# self.G_hat_train_op = self.T_optim.minimize(self.teacher_loss, var_list=self.G_params)
 	self.D_train_op = self.D_optim.minimize(self.D_loss, var_list=self.D_params)
 	self.Domain_text_train_op = self.Domain_text_optim.minimize(self.D_text_loss)
+	self.Senti_classify_train_op = self.Senti_classify_optim.minimize(self.D_senti_loss)
+
 	log_dir = os.path.join('.', 'logs_m', self.model_name)
 	if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -794,15 +941,17 @@ class SeqGAN():
 	count = 0
 	D_count = 0
 	G_count = 0
-	for idx in range(self.max_iter//250):
+        freq_to_eval = 200
+	for idx in range(self.max_iter//freq_to_eval):
             self.save(self.checkpoint_dir, count)
             print "Epoch    : %d"%(idx)
             print "Iter     : %d"%(count)
             print "G_iter   : %d"%(G_count)
             print "D_iter   : %d"%(D_count)
             self.evaluate(count)
-            for _ in tqdm(range(250)):
-		tgt_image_feature = self.dataset.flickr_sequential_sample(self.batch_size)
+            for _ in tqdm(range(freq_to_eval)):
+		tgt_image_feature, image_id = self.dataset.flickr_sequential_sample(self.batch_size)
+                senti_label = self.dataset.flickr_get_sentiment_label(image_id)
 		tgt_text = self.dataset.flickr_caption_sequential_sample(self.batch_size)
 		image_feature, right_text, _ = self.dataset.sequential_sample(self.batch_size)
                 nonENDs = np.array(map(lambda x: (x != self.NOT).sum(), right_text))
@@ -820,11 +969,14 @@ class SeqGAN():
                 wrong_length = np.sum((wrong_text!=self.NOT)+0, 1)
 		for _ in range(1):	# g_step
 		    # update G
-		    feed_dict = {self.images: tgt_image_feature}
+		    feed_dict = {
+                            self.images: tgt_image_feature,
+                            self.senti_label: senti_label,
+                        }
 		    _, G_loss, g_summary = self.sess.run([self.G_train_op, self.G_loss, self.G_summary], feed_dict)
                     self.writer.add_summary(g_summary, G_count)
 		    G_count += 1
-		for _ in range(20):      # d_step    
+		for _ in range(5):      # d_step    
 		    # update D
 		    feed_dict = {self.images: image_feature, 
 			self.right_text:right_text, 
@@ -837,15 +989,29 @@ class SeqGAN():
 			self.src_text: right_text,
 			self.tgt_text: tgt_text
                         }
-		    _, D_loss, d_summary = self.sess.run([self.D_train_op, self.D_loss, self.D_summary], feed_dict)
+		    _, D_loss, d_summary = self.sess.run(
+                                [self.D_train_op, self.D_loss, self.D_summary], 
+                                feed_dict
+                            )
 		    _, D_text_loss, d_text_summary = self.sess.run(
                             [self.Domain_text_train_op, self.D_text_loss, self.D_text_summary],
 			    {
                                 self.src_text: right_text,
 			        self.tgt_text: tgt_text,
 			        self.images: tgt_image_feature
-			    })
+			        }
+                            )
+                    _, D_senti_loss, d_senti_summary = self.sess.run(
+                            [self.Senti_classify_train_op, self.D_senti_loss_sum, self.D_senti_summary],
+                            {
+			        self.images: tgt_image_feature,
+                                self.tgt_text: tgt_text,
+                                self.senti_label: senti_label
+                                }
+                            )
                     self.writer.add_summary(d_summary, D_count)
+                    self.writer.add_summary(d_text_summary, D_count)
+                    self.writer.add_summary(d_senti_summary, D_count)
 		    D_count += 1
                 # summary_str = self.sess.run([self.summary_op]) 
                 # self.writer.add_summary(summary_str, count)
@@ -855,20 +1021,34 @@ class SeqGAN():
         samples = []
         samples_index = []
 	image_feature, image_id, test_annotation = self.dataset.get_test_for_eval()
-	num_samples = self.dataset.source_num_test_images
+	num_samples = image_feature.shape[0] # self.dataset.source_num_test_images
 	samples_index = np.full([self.batch_size*(num_samples//self.batch_size), self.max_words], self.NOT)
+        # print 'image_feature size:', image_feature.shape
+        print 'num_samples:', num_samples
         for i in range(num_samples//self.batch_size):
+            image_feature_feed = np.zeros([self.batch_size, self.dataset.max_themes])
 	    image_feature_test = image_feature[i*self.batch_size:(i+1)*self.batch_size]
-	    feed_dict = {self.images: image_feature_test}
+            image_feature_test_length = len(image_feature_test)
+            # if image_feature_test_length < self.batch_size:
+            #     image_feature_test = image_feature[-self.batch_size]
+            for j in range(image_feature_test_length):
+                image_feature_feed[j, :] = image_feature_test[j]
+	    feed_dict = {self.images: image_feature_feed}
             predict_words = self.sess.run(self.predict_words_argmax, feed_dict)
-            for j in range(self.batch_size):
+            for j in range(self.batch_size - image_feature_test_length, self.batch_size):
 		samples.append([self.dataset.decode(predict_words[j, :], type='string', remove_END=True)[0]])
                 sample_index = self.dataset.decode(predict_words[j, :], type='index', remove_END=False)[0]
                 samples_index[i*self.batch_size+j][:len(sample_index)] = sample_index
         # predict from samples
         samples = np.asarray(samples)
         samples_index = np.asarray(samples_index)
-        print '[%] Sentence:', samples[0]
+        for ii in range(10):
+            tmp = u''
+            for i in image_feature[ii, :]:
+                tmp += self.dataset.ix2word[str(int(i))] + u' '
+            print '[%] Topic : ', tmp.encode('utf-8') 
+            print '[-] Sentence:', samples[ii][0]
+            print '[%] GroundTruth:', test_annotation[str(image_id[ii])][0]['caption'].encode('utf8')
 	meteor_pd = {}
         meteor_id = []
         for j in range(len(samples)):

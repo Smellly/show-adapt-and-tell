@@ -20,3 +20,8 @@ def decode_any(word):
         enc = detect(word)['encoding']
         word = word.decode(enc)
     return word
+
+def decode_utf8(word):
+    if not isinstance(word, unicode):
+        word = word.decode('utf-8')
+    return word

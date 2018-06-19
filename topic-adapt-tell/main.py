@@ -16,7 +16,7 @@ flags.DEFINE_float("learning_rate", 1e-4, "Learning rate of for adam [0.0003]")
 flags.DEFINE_float("drop_out_rate", 0.3, "Drop out rate fro LSTM")
 flags.DEFINE_float("discount", 0.95, "discount factor in RL")
 flags.DEFINE_string("model_name", "cub_no_scheduled", "")
-flags.DEFINE_integer("batch_size", 64, "The size of batch images [64]") # 128:G, 32:D
+flags.DEFINE_integer("batch_size", 20, "The size of batch images [64]") # 128:G, 32:D
 flags.DEFINE_integer("G_hidden_size", 512, "")          # 512:G, 64:D
 flags.DEFINE_integer("D_hidden_size", 512, "")
 flags.DEFINE_integer("max_iter", 100000, "")
@@ -24,7 +24,7 @@ flags.DEFINE_integer('max_to_keep', 40, '')
 flags.DEFINE_integer('rollout_num', 3, '')
 flags.DEFINE_string("method", "ROUGE_L", "")
 flags.DEFINE_string("load_ckpt", 
-        './checkpoint_m/mscoco/G_pretrained/G_pretrained-45000', 
+        './checkpoint_m/mscoco/G_pretrained/G_pretrained-39000', 
         "Directory name to loade the checkpoints [checkpoint]")
 flags.DEFINE_string("checkpoint_dir", 
         "checkpoint_m", 
@@ -35,7 +35,7 @@ flags.DEFINE_boolean("load_pretrain", True, "Load the pretraining")
 flags.DEFINE_boolean("is_train", True, "True for training, False for testing [False]")
 
 # Setting from Self-critical Sequence Training for Image Captioning
-tf.app.flags.DEFINE_float('init_lr', 5e-4, '')  # follow IBM's paper
+tf.app.flags.DEFINE_float('init_lr', 1e-4, '')  # follow IBM's paper
 tf.app.flags.DEFINE_float('lr_decay', 0.8, 'learning rate decay factor')
 tf.app.flags.DEFINE_float('lr_decay_every', 6600, 'every 3 epoch 3*2200')
 # ss -> schedule sampling

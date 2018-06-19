@@ -1,3 +1,4 @@
+# encoding: utf-8
 import numpy as np
 import utils
 import os, re, json
@@ -120,14 +121,16 @@ class mscoco():
         flickr_caption_train_data = utils.unpickle(flickr_caption_train_data_path)
         self.flickr_caption_train = flickr_caption_train_data['tokenized_caption_list']
         self.train_flickr_img_feat = flickr_caption_train_data['tokenized_topic_list']
-        self.num_train_images_filckr = len(self.train_flickr_img_feat)
-        self.train_img_idx = range(self.num_train_images_filckr)
+        self.train_flickr_img_id = flickr_caption_train_data['img_id_list']
+        self.num_train_images_flickr = len(self.train_flickr_img_feat)
+        self.train_img_idx = range(self.num_train_images_flickr)
         self.flickr_caption_idx_train = flickr_caption_train_data['filename_list']
         self.num_flickr_train_caption = self.flickr_caption_train.shape[0]
         # flickr_testimg_path = './cub/cub_test_feat.pkl'
         flickr_testimg_path = './cub/tokenized_test_caption.pkl'
         self.test_flickr_img_feat = utils.unpickle(flickr_testimg_path)['tokenized_topic_list']
         self.flickr_random_shuffle()    # shuffle the text data
+        self.flickr_id2topic = utils.unpickle('./cub/id2topic.pkl')
 
         # MSCOCO data
         # img_feat_path = './data/coco_trainval_feat.pkl' # todo topic
@@ -150,7 +153,7 @@ class mscoco():
         self.train_img_feat = caption_train_data['tokenized_topic_list']
 
         # val caption
-        caption_test_data_path = './data/tokenized_test_caption.pkl'
+        caption_test_data_path = './data/tokenized_val_caption.pkl'
         caption_test_data = utils.unpickle(caption_test_data_path)
         self.caption_test = caption_test_data['tokenized_caption_list']
         self.caption_idx_test = caption_test_data['filename_list']
@@ -205,6 +208,7 @@ class mscoco():
         # caption_train is tokenized caption which type is numpy
         self.flickr_caption_train = self.flickr_caption_train[idx] 
         self.train_flickr_img_feat = self.train_flickr_img_feat[idx]
+        self.train_flickr_img_id = self.train_flickr_img_id[idx]
         self.flickr_caption_idx_train = self.flickr_caption_idx_train[idx]
 
     def get_train_annotation(self):
@@ -297,7 +301,7 @@ class mscoco():
         indexes = []
         for s in range(sent_idx.shape[0]):
             index = []
-            sentence = ''
+            sentence = u''.encode('utf8')
             for i in range(sent_idx.shape[1]):
                 if int(sent_idx[s][i]) == int(self.word2ix[u'<EOS>']):
                     if not remove_END:
@@ -307,32 +311,45 @@ class mscoco():
                 else:
                     try:
                         word = self.ix2word[str(int(sent_idx[s][i]))]
-                        sentence = sentence + word + ' '
+                        # print 'index, word:', sent_idx[s][i], 
+                        # print word.encode('utf8')
+                        sentence = sentence + word.encode('utf8') + u' '.encode('utf8')
                         index.append(int(sent_idx[s][i]))
                     except KeyError:
-                        sentence = sentence + "<UNK>" + ' '
-                        index.append(int(self.word2ix[u'<UNK>']))
+                        sentence = sentence + u"<UNK>".encode('utf8') + u' '.encode('utf8')
+                        index.append(int(self.word2ix[u'<UNK>'.encode('utf8')]))
             indexes.append(index)
-            sentences.append((sentence+'.').capitalize())
+            # print 'sentence:', sentence
+            sentences.append(sentence + u'.'.encode('utf8'))
         if type=='string':
+            # print 'decode:', sentences[-1]
             return sentences
         elif type=='index':
             return indexes
 
     def flickr_sequential_sample(self, batch_size):
-        end = (self.current_flickr+batch_size) % self.num_train_images_filckr
+        end = (self.current_flickr+batch_size) % self.num_train_images_flickr
         image_feature = np.zeros([batch_size, self.max_themes])
-        if self.current_flickr + batch_size < self.num_train_images_filckr:
+        if self.current_flickr + batch_size < self.num_train_images_flickr:
             key = self.train_img_idx[self.current_flickr:end]
         else:
             key = np.concatenate((self.train_img_idx[self.current_flickr:], self.train_img_idx[:end]), axis=0)
 
         count = 0
+        img_id_list = []
         for k in key:
-            image_feature[count] = self.train_flickr_img_feat[k]
-            count += 1
+            try:
+                # print 'data_loader: flickr_sequential_sample'
+                # print k, self.train_flickr_img_id[int(k)]
+                image_feature[count] = self.train_flickr_img_feat[int(k)]
+                img_id_list.append(self.train_flickr_img_id[int(k)])
+                count += 1
+            except:
+                print 'data_loader: flickr_sequential_sample'
+                print key
+                print k
         self.current_flickr = end
-        return image_feature
+        return image_feature, img_id_list
 
     def flickr_caption_sequential_sample(self, batch_size):
         end = (self.current_flickr_caption+batch_size) % self.num_flickr_train_caption
@@ -365,3 +382,18 @@ class mscoco():
         self.current = end
         return image_feature, caption, img_id
 
+    def flickr_get_sentiment_label(self, image_id):
+        senti = np.zeros([len(image_id), 2])
+        for ind, img in enumerate(image_id):
+            uni = self.flickr_id2topic[str(int(img))][1]
+            # print uni
+            if uni == '正'.decode('utf-8'):
+                senti[ind, :] = [0, 1]
+            elif uni == '负'.decode('utf-8'):
+                senti[ind, :] = [1, 0]
+            else:
+                print 'we get wrong:'
+                print self.flickr_id2topic[str(int(img))]
+        # print 'flickr_get_sentiment_label:'
+        # print senti
+        return senti

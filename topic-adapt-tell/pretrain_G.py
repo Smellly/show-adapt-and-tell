@@ -1,3 +1,4 @@
+# encoding : utf-8
 from __future__ import division
 import os
 import time
@@ -8,10 +9,11 @@ import sys
 sys.path.append('./coco_spice/pycocoevalcap/')
 # from coco_spice.pycocoevalcap.eval import COCOEvalCap
 from eval import COCOEvalCap
-import pdb
+from chardet import detect
 
 class G_pretrained():
     def __init__(self, sess, dataset, conf=None):
+        self.LENGTH = 20
         self.sess = sess
         self.batch_size = conf.batch_size
         self.max_iter = conf.max_iter
@@ -53,7 +55,7 @@ class G_pretrained():
         self.coins = tf.placeholder('bool', [self.batch_size, self.max_words-1])
         # self.images_one = tf.placeholder('float32', [100, self.img_dims]) # image
         # self.images = tf.placeholder('float32', [self.batch_size, self.img_dims])
-        self.images_one = tf.placeholder('int32', [100, self.img_dims]) # topic
+        self.images_one = tf.placeholder('int32', [self.LENGTH, self.img_dims]) # topic
         self.images = tf.placeholder('int32', [self.batch_size, self.img_dims])
         self.target_sentence = tf.placeholder('int32', [self.batch_size, self.max_words])
         self.mask = tf.placeholder('float32', [self.batch_size, self.max_words])       # mask out the loss
@@ -61,9 +63,9 @@ class G_pretrained():
         self._predict_words_argmax = []
         self._predict_words_sample = []
         self._predict_words_argmax = self.build_Generator_test(
-                100, self._predict_words_argmax, type='max', name='G')
+                self.LENGTH, self._predict_words_argmax, type='max', name='G')
         self._predict_words_sample = self.build_Generator_test(
-                100, self._predict_words_sample, type='sample', name='G')
+                self.LENGTH, self._predict_words_sample, type='sample', name='G')
 
         self.lr = tf.Variable(self.init_lr, trainable=False)
         self.optim = tf.train.AdamOptimizer(self.lr)    
@@ -73,7 +75,7 @@ class G_pretrained():
         for param in params:
             self.G_params_dict.update({param.name:param})
 
-    def build_Generator_test(self, batch_size=100, predict_words=None, type='max', name='generator'):
+    def build_Generator_test(self, batch_size=20, predict_words=None, type='max', name='generator'):
         random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
         with tf.variable_scope(name):
             tf.get_variable_scope().reuse_variables()
@@ -319,23 +321,25 @@ class G_pretrained():
             image_feature, image_id, test_annotation = self.dataset.get_test_for_eval()
             num_eval = len(image_id)
         elif split == 'train':
-            image_feature, img_name =  self.dataset.get_train_for_eval(50000)
-            num_eval = 50000
+            # image_feature, img_name =  self.dataset.get_train_for_eval(50000)
+            image_feature, img_name =  self.dataset.get_train_for_eval(500)
+            num_eval = 500
         print '### num_eval : ', num_eval
 
         samples = []
+
         samples_index = np.full([len(image_feature), self.max_words], self.NOT)
         if eval_algo == 'max': 
             prediction = self._predict_words_argmax
         elif eval_algo == 'sample':
             prediction = self._predict_words_sample
-        for i in range(num_eval//100):
-            image_feature_one = image_feature[i*100:(i+1)*100]
+        for i in range(num_eval//self.LENGTH):
+            image_feature_one = image_feature[i*self.LENGTH:(i+1)*self.LENGTH]
             image_feature_length = len(image_feature_one)
-            if image_feature_length < 100:
-                image_feature_one = image_feature[-100:]
+            if image_feature_length < self.LENGTH:
+                image_feature_one = image_feature[-self.LENGTH:]
             # print 'img_feat_one:', image_feature_one
-            # print 'img_id:', image_id[i*100:(i+1)*100]
+            # print 'img_id:', image_id[i*self.LENGTH:(i+1)*self.LENGTH]
             # print 'images_one shape:', self.images_one.shape
             # print 'img_feat_one shape:', image_feature_one.shape
             predict_words = self.sess.run(
@@ -343,12 +347,12 @@ class G_pretrained():
                             {
                                 self.images_one: image_feature_one,
                             })
-            for j in range(100-image_feature_length, 100):
+            for j in range(self.LENGTH-image_feature_length, self.LENGTH):
                 samples.append(
                         [self.dataset.decode(predict_words[j, :], type='string', remove_END=True)[0]])
                 sample_index = self.dataset.decode(
                         predict_words[j, :], type='index', remove_END=False)[0]
-                samples_index[i*100+j-100+image_feature_length][:len(sample_index)] = sample_index
+                samples_index[i*self.LENGTH+j-self.LENGTH+image_feature_length][:len(sample_index)] = sample_index
         if split == 'train':
             # save for negative sample  
             samples = np.asarray(samples)
@@ -359,6 +363,17 @@ class G_pretrained():
             np.savez(os.path.join(
                 sample_dir, file_name), string=samples, index=samples_index, img_name=img_name)
         else:
+            print '### topic :'
+            for i in image_feature[-1, :]:
+                print self.dataset.ix2word[str(int(i))],
+            print 
+            print '### sample :'
+            print samples[-1][0] # , detect(samples[-1][0])
+            print '### gt :'
+            print test_annotation[str(int(image_id[-1]))][0]['caption'].encode('utf8')
+            print '### predict_words :', predict_words[-1, :]
+            # for i in predict_words[-1, :]:
+            #     print self.dataset.ix2word[str(int(i))].encode('utf8'), self.dataset.ix2word[str(int(i))].__class__
             meteor_pd = {}
             meteor_id = []
             for j in range(len(samples)):
@@ -367,7 +382,6 @@ class G_pretrained():
                 meteor_pd[str(
                     int(image_id[j]))] = [{'image_id':str(int(image_id[j])), 'caption':samples[j][0]}]
                 meteor_id.append(str(int(image_id[j])))
-            #np.savez("result_%s"%str(count), meteor_pd=meteor_pd, meteor_id=meteor_id)
             # coco(groundTruth), cocoRes, cocoImgIds
             scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
             scorer.evaluate()               

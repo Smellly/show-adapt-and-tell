@@ -11,6 +11,7 @@ sys.path.append('./coco_spice/pycocoevalcap/')
 # from coco_spice.pycocoevalcap.eval import COCOEvalCap
 from eval import COCOEvalCap
 # import pdb
+import datetime
 
 def calculate_loss_and_acc_with_logits(predictions, logits, label, l2_loss, l2_reg_lambda):
     # Calculate Mean cross-entropy loss
@@ -281,7 +282,6 @@ class SeqGAN():
 	    	self.D_params_dict.update({param.name:param})
 	print "Build graph complete"
 
-    '''
     def rollout_update(self):
 	for r, g in zip(self.R_params, self.G_params):
 	    assign_op = r.assign(g)
@@ -597,7 +597,6 @@ class SeqGAN():
 	    teacher_loss_sum = tf.summary.scalar("teacher_loss", teacher_loss)
 
 	    return teacher_loss, teacher_loss_sum
-    '''
 
     def generator(self, name='generator', reuse=True):
         random_uniform_init = tf.random_uniform_initializer(minval=-0.1, maxval=0.1)
@@ -778,7 +777,13 @@ class SeqGAN():
             print "Iter     : %d"%(count)
             print "G_iter   : %d"%(G_count)
             print "D_iter   : %d"%(D_count)
+            oldtime = datetime.datetime.now()
+            print 'time:', oldtime
             self.evaluate(count)
+            newtime = datetime.datetime.now()
+            print 'time:', newtime
+            print 'lap:', (newtime-oldtime).seconds
+            '''
             for _ in tqdm(range(250)):
 		tgt_image_feature = self.dataset.flickr_sequential_sample(self.batch_size)
 		tgt_text = self.dataset.flickr_caption_sequential_sample(self.batch_size)
@@ -828,6 +833,7 @@ class SeqGAN():
                 # summary_str = self.sess.run([self.summary_op]) 
                 # self.writer.add_summary(summary_str, count)
 		count += 1
+        ''' 
 
     def evaluate(self, count):
         samples = []

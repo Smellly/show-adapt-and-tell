@@ -2,12 +2,15 @@
 import numpy as np
 import json
 
-for i in [str(x) for x in range(0,1000,200)]:
+for i in [str(x) for x in range(0,5000,200)]:
     cub = np.load('./SeqGAN_samples_sample/cub_no_scheduled/cub_' + i + '.npz')
-    with open('weibo_' + i + '.txt', 'w') as f:
+    with open('results_0713/weibo_' + i + '.txt', 'w') as f:
         for j in range(len(cub['string'])):
-            i = cub['string'].item(j)
-            f.write(i + '\n')
+            k = cub['string'].item(j)
+            try:
+                f.write(k + '\n')
+            except:
+                print(k)
 
 test = json.load(open('./cub/K_test_annotation.json'))
 with open('weibo_gt.txt', 'w') as f:

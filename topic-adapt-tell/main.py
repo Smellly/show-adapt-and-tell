@@ -24,7 +24,7 @@ flags.DEFINE_integer('max_to_keep', 40, '')
 flags.DEFINE_integer('rollout_num', 3, '')
 flags.DEFINE_string("method", "ROUGE_L", "")
 flags.DEFINE_string("load_ckpt", 
-        './checkpoint_m/mscoco/G_pretrained/G_pretrained-39000', 
+        './checkpoint_m/mscoco/G_pretrained/G_pretrained-72000', 
         "Directory name to loade the checkpoints [checkpoint]")
 flags.DEFINE_string("checkpoint_dir", 
         "checkpoint_m", 

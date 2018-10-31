@@ -12,6 +12,7 @@ sys.path.append('./coco_spice/pycocoevalcap/')
 # from coco_spice.pycocoevalcap.eval import COCOEvalCap
 from eval import COCOEvalCap
 # import pdb
+import datetime
 
 def calculate_loss_and_acc_with_logits(predictions, logits, label, l2_loss, l2_reg_lambda):
     # Calculate Mean cross-entropy loss
@@ -1018,7 +1019,10 @@ class SeqGAN():
 		count += 1
 
     def evaluate(self, count):
+        oldtime = datetime.datetime.now()
+        print 'TIME:', oldtime
         samples = []
+        print 'loading all the topics'
         samples_index = []
 	image_feature, image_id, test_annotation = self.dataset.get_test_for_eval()
 	num_samples = image_feature.shape[0] # self.dataset.source_num_test_images
@@ -1042,13 +1046,14 @@ class SeqGAN():
         # predict from samples
         samples = np.asarray(samples)
         samples_index = np.asarray(samples_index)
-        for ii in range(10):
+        for ii in range(200):
             tmp = u''
             for i in image_feature[ii, :]:
                 tmp += self.dataset.ix2word[str(int(i))] + u' '
             print '[%] Topic : ', tmp.encode('utf-8') 
             print '[-] Sentence:', samples[ii][0]
             print '[%] GroundTruth:', test_annotation[str(image_id[ii])][0]['caption'].encode('utf8')
+            print '[%] TIME:', datetime.datetime.now()
 	meteor_pd = {}
         meteor_id = []
         for j in range(len(samples)):
@@ -1056,14 +1061,18 @@ class SeqGAN():
                 break
             meteor_pd[str(int(image_id[j]))] = [{'image_id':str(int(image_id[j])), 'caption':samples[j][0]}]
             meteor_id.append(str(int(image_id[j])))
-        scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
-	# scorer.evaluate(verbose=True)
-	scorer.evaluate()
         sample_dir = os.path.join("./SeqGAN_samples_sample", self.model_name)
         if not os.path.exists(sample_dir):
             os.makedirs(sample_dir)
         file_name = "%s_%s" % (self.dataset.dataset_name, str(count))
         np.savez(os.path.join(sample_dir, file_name), string=samples, index=samples_index, id=meteor_id)
+        newtime = datetime.datetime.now()
+        print 'TIME:', newtime
+        print 'lap:', (newtime-oldtime).seconds
+        print 'speed:' # int((newtime-oldtime).seconds)/num_samples
+        scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
+	# scorer.evaluate(verbose=True)
+	scorer.evaluate()
 
     def save(self, checkpoint_dir, step):
         model_name = "SeqGAN_sample"
@@ -1089,3 +1098,20 @@ class SeqGAN():
         else:
             return False
 
+    def test(self):
+        print "--------------------------model test---------------------------"
+	self.G_train_op = self.G_optim.minimize(self.G_loss, var_list=self.G_params)
+	# self.G_hat_train_op = self.T_optim.minimize(self.teacher_loss, var_list=self.G_params)
+	self.D_train_op = self.D_optim.minimize(self.D_loss, var_list=self.D_params)
+	self.Domain_text_train_op = self.Domain_text_optim.minimize(self.D_text_loss)
+	self.Senti_classify_train_op = self.Senti_classify_optim.minimize(self.D_senti_loss)
+
+	tf.initialize_all_variables().run()
+	if self.load_pretrain:
+	    print "[@] Load the pretrained model %s."%self.load_ckpt
+	    self.G_saver = tf.train.Saver(self.G_params_dict)
+	    # self.G_saver.restore(self.sess, "./checkpoint/mscoco/G_pretrained/G_Pretrained-39000")
+	    self.G_saver.restore(self.sess, self.load_ckpt)
+
+	self.saver = tf.train.Saver(max_to_keep=self.max_to_keep)
+        self.evaluate(0)

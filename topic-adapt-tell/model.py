@@ -1018,7 +1018,7 @@ class SeqGAN():
                 # self.writer.add_summary(summary_str, count)
 		count += 1
 
-    def evaluate(self, count):
+    def evaluate(self, count, score_verbose=True, output_path=None):
         oldtime = datetime.datetime.now()
         print 'TIME:', oldtime
         samples = []
@@ -1046,6 +1046,7 @@ class SeqGAN():
         # predict from samples
         samples = np.asarray(samples)
         samples_index = np.asarray(samples_index)
+        output = []
         for ii in range(200):
             tmp = u''
             for i in image_feature[ii, :]:
@@ -1054,6 +1055,10 @@ class SeqGAN():
             print '[-] Sentence:', samples[ii][0]
             print '[%] GroundTruth:', test_annotation[str(image_id[ii])][0]['caption'].encode('utf8')
             print '[%] TIME:', datetime.datetime.now()
+            output.append(tmp.encode('utf-8') + '# ' + samples[ii][0] + '\n')
+        if output_path:
+            with open(output_path, 'w') as f:
+                f.writelines(output)
 	meteor_pd = {}
         meteor_id = []
         for j in range(len(samples)):
@@ -1069,10 +1074,11 @@ class SeqGAN():
         newtime = datetime.datetime.now()
         print 'TIME:', newtime
         print 'lap:', (newtime-oldtime).seconds
-        print 'speed:' # int((newtime-oldtime).seconds)/num_samples
-        scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
-	# scorer.evaluate(verbose=True)
-	scorer.evaluate()
+        print 'speed: %f second per tweet'%shint((newtime-oldtime).seconds)/num_samples)
+        if score_verbose:
+            scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
+            # scorer.evaluate(verbose=True)
+            scorer.evaluate()
 
     def save(self, checkpoint_dir, step):
         model_name = "SeqGAN_sample"
@@ -1114,4 +1120,5 @@ class SeqGAN():
 	    self.G_saver.restore(self.sess, self.load_ckpt)
 
 	self.saver = tf.train.Saver(max_to_keep=self.max_to_keep)
-        self.evaluate(0)
+        output_path = '/home/smelly/projects/show-adapt-and-tell/topic-adapt-tell/outputtest.txt'
+        self.evaluate(0, False, output_path)

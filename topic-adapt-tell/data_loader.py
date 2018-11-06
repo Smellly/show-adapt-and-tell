@@ -238,6 +238,43 @@ class mscoco():
             image_id[ind] = int(self.target_test_image_id[ind])
         return image_feature, image_id, self.target_test_annotation
 
+    # cub
+    def get_specific_for_eval(self, topic, uni, themes, caption_nums):
+        '''
+        topic: utf8
+        uni: utf8
+        themes: utf8
+        caption_nums: str
+        '''
+        if topic.decode('utf-8') in self.word2ix:
+            topic_ix = self.word2ix[topic.decode('utf-8')]
+        else:
+            print 'Topic not in dict'
+            return None 
+        if uni == '正':
+            uni_ix = self.word2ix[uni.decode('utf-8')]
+        elif uni == '负':
+            uni_ix = self.word2ix[uni.decode('utf-8')]
+        else:
+            print 'we get wrong tendency:' uni
+            return None 
+        themes_l = themes.split()
+        themes_ix = []
+        for word in themes_l:
+            if x in self.word2ix:
+                themes_ix.append(self.word2ix[x.decode('utf8')])
+
+        caption_nums = int(caption_nums)
+        image_feature = np.zeros([caption_nums, self.max_themes])
+        for ind in range(caption_nums):
+            image_feature[ind, 0] = topic_ix
+            image_feature[ind, 1] = uni_ix
+            theme_randint = np.random.randint(self.max_themes-2)
+            image_feature[ind, 2:theme_randint+2] = np.random.choice(themes_ix, theme_randint)
+
+        return image_feature
+
+
     # mscoco
     def get_source_test_for_eval(self):
         image_feature = np.zeros([self.source_num_test_images, self.max_themes])

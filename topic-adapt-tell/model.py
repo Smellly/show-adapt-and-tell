@@ -1104,8 +1104,8 @@ class SeqGAN():
         else:
             return False
 
-    def test(self):
-        print "--------------------------model test---------------------------"
+    def test(self, topic, tendency, themes, caption_nums):
+        print "--------------------------model inference---------------------------"
 	self.G_train_op = self.G_optim.minimize(self.G_loss, var_list=self.G_params)
 	# self.G_hat_train_op = self.T_optim.minimize(self.teacher_loss, var_list=self.G_params)
 	self.D_train_op = self.D_optim.minimize(self.D_loss, var_list=self.D_params)
@@ -1121,4 +1121,43 @@ class SeqGAN():
 
 	self.saver = tf.train.Saver(max_to_keep=self.max_to_keep)
         output_path = '/home/smelly/projects/show-adapt-and-tell/topic-adapt-tell/outputtest.txt'
-        self.evaluate(0, False, output_path)
+
+        oldtime = datetime.datetime.now()
+        print 'TIME:', oldtime
+        samples = []
+        print 'loading all the topics'
+        samples_index = []
+	image_feature = self.dataset.get_specific_for_eval(topic, tendency, themes, caption_nums)
+	num_samples = image_feature.shape[0] # self.dataset.source_num_test_images
+	samples_index = np.full([self.batch_size*(num_samples//self.batch_size), self.max_words], self.NOT)
+        # print 'image_feature size:', image_feature.shape
+        print 'num_samples:', num_samples
+        for i in range(num_samples//self.batch_size):
+            image_feature_feed = np.zeros([self.batch_size, self.dataset.max_themes])
+	    image_feature_test = image_feature[i*self.batch_size:(i+1)*self.batch_size]
+            image_feature_test_length = len(image_feature_test)
+            # if image_feature_test_length < self.batch_size:
+            #     image_feature_test = image_feature[-self.batch_size]
+            for j in range(image_feature_test_length):
+                image_feature_feed[j, :] = image_feature_test[j]
+	    feed_dict = {self.images: image_feature_feed}
+            predict_words = self.sess.run(self.predict_words_argmax, feed_dict)
+            for j in range(self.batch_size - image_feature_test_length, self.batch_size):
+		samples.append([self.dataset.decode(predict_words[j, :], type='string', remove_END=True)[0]])
+                sample_index = self.dataset.decode(predict_words[j, :], type='index', remove_END=False)[0]
+                samples_index[i*self.batch_size+j][:len(sample_index)] = sample_index
+        # predict from samples
+        samples = np.asarray(samples)
+        samples_index = np.asarray(samples_index)
+        output = []
+        for ii in range(int(caption_nums)):
+            tmp = u''
+            for i in image_feature[ii, :]:
+                tmp += self.dataset.ix2word[str(int(i))] + u' '
+            print '[%] Topic : ', tmp.encode('utf-8') 
+            print '[-] Sentence:', samples[ii][0]
+            print '[%] TIME:', datetime.datetime.now()
+            output.append(tmp.encode('utf-8') + '# ' + samples[ii][0] + '\n')
+        if output_path:
+            with open(output_path, 'w') as f:
+                f.writelines(output)

@@ -256,12 +256,12 @@ class mscoco():
         elif uni == '负':
             uni_ix = self.word2ix[uni.decode('utf-8')]
         else:
-            print 'we get wrong tendency:' uni
+            print 'we get wrong tendency:', uni
             return None 
         themes_l = themes.split()
         themes_ix = []
         for word in themes_l:
-            if x in self.word2ix:
+            if word in self.word2ix:
                 themes_ix.append(self.word2ix[x.decode('utf8')])
 
         caption_nums = int(caption_nums)
@@ -270,7 +270,8 @@ class mscoco():
             image_feature[ind, 0] = topic_ix
             image_feature[ind, 1] = uni_ix
             theme_randint = np.random.randint(self.max_themes-2)
-            image_feature[ind, 2:theme_randint+2] = np.random.choice(themes_ix, theme_randint)
+            if themes_ix:
+                image_feature[ind, 2:theme_randint+2] = np.random.choice(themes_ix, theme_randint)
 
         return image_feature
 

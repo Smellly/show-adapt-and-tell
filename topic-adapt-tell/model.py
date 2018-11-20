@@ -1074,7 +1074,7 @@ class SeqGAN():
         newtime = datetime.datetime.now()
         print 'TIME:', newtime
         print 'lap:', (newtime-oldtime).seconds
-        print 'speed: %f second per tweet'%shint((newtime-oldtime).seconds)/num_samples)
+        print 'speed: %f second per tweet'%(shint((newtime-oldtime).seconds)/num_samples)
         if score_verbose:
             scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
             # scorer.evaluate(verbose=True)

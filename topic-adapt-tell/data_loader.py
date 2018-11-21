@@ -261,8 +261,10 @@ class mscoco():
         themes_l = themes.split()
         themes_ix = []
         for word in themes_l:
-            if word in self.word2ix:
-                themes_ix.append(self.word2ix[x.decode('utf8')])
+            if word.decode('utf8') in self.word2ix:
+                themes_ix.append(self.word2ix[word.decode('utf8')])
+            else:
+                print 'themes: %s not in'%word
 
         caption_nums = int(caption_nums)
         image_feature = np.zeros([caption_nums, self.max_themes])
@@ -274,7 +276,6 @@ class mscoco():
                 image_feature[ind, 2:theme_randint+2] = np.random.choice(themes_ix, theme_randint)
 
         return image_feature
-
 
     # mscoco
     def get_source_test_for_eval(self):

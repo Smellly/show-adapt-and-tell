@@ -1132,6 +1132,9 @@ class SeqGAN():
 	samples_index = np.full([self.batch_size*(num_samples//self.batch_size), self.max_words], self.NOT)
         # print 'image_feature size:', image_feature.shape
         print 'num_samples:', num_samples
+        if self.batch_size < num_samples:
+            print 'batch size %d is less than num_samples %d'%(self.batch_size, num_samples)
+            print 'plz set larger'
         for i in range(num_samples//self.batch_size):
             image_feature_feed = np.zeros([self.batch_size, self.dataset.max_themes])
 	    image_feature_test = image_feature[i*self.batch_size:(i+1)*self.batch_size]
@@ -1142,6 +1145,7 @@ class SeqGAN():
                 image_feature_feed[j, :] = image_feature_test[j]
 	    feed_dict = {self.images: image_feature_feed}
             predict_words = self.sess.run(self.predict_words_argmax, feed_dict)
+            # print 'predict_words:', predict_words
             for j in range(self.batch_size - image_feature_test_length, self.batch_size):
 		samples.append([self.dataset.decode(predict_words[j, :], type='string', remove_END=True)[0]])
                 sample_index = self.dataset.decode(predict_words[j, :], type='index', remove_END=False)[0]

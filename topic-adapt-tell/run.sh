@@ -11,4 +11,8 @@
 # CUDA_VISIBLE_DEVICES=1 python2 -u main.py
 
 # for test
-CUDA_VISIBLE_DEVICES=0 python2 -u main_test.py
+CUDA_VISIBLE_DEVICES=0 python2 -u main_test.py \
+    --topic 美食 \
+    --tendency 负 \
+    --themes 难吃 不好 分量 小 \
+    --caption_nums 20

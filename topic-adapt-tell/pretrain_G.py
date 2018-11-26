@@ -6,7 +6,7 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 import sys
-sys.path.append('./coco_spice/pycocoevalcap/')
+sys.path.append('/home/smelly/projects/show-adapt-and-tell/topic-adapt-tell/coco_spice/pycocoevalcap/')
 # from coco_spice.pycocoevalcap.eval import COCOEvalCap
 from eval import COCOEvalCap
 from chardet import detect

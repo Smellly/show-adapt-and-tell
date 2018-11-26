@@ -271,9 +271,9 @@ class mscoco():
         for ind in range(caption_nums):
             image_feature[ind, 0] = topic_ix
             image_feature[ind, 1] = uni_ix
-            theme_randint = np.random.randint(self.max_themes-2)
+            theme_randint = np.min([np.random.randint(self.max_themes-2), len(themes_ix)])
             if themes_ix:
-                image_feature[ind, 2:theme_randint+2] = np.random.choice(themes_ix, theme_randint)
+                image_feature[ind, 2:theme_randint+2] = np.random.choice(themes_ix, theme_randint, replace=False)
 
         return image_feature
 

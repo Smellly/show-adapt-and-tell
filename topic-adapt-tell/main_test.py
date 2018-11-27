@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 from __future__ import print_function
 import os
 import scipy.misc
@@ -81,7 +82,7 @@ def main(_):
         if FLAGS.is_train:
             print('is_train:', FLAGS.is_train)
             model = SeqGAN(sess, dataset, info, conf=FLAGS)
-            model.test()
+            model.test(FLAGS.topic, FLAGS.tendency, FLAGS.themes, FLAGS.caption_nums)
         print('Session End......')
 
 if __name__ == '__main__':

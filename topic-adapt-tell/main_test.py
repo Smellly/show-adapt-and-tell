@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from pretrain_G import G_pretrained
 from pretrain_CNN_D import D_pretrained
-from model import SeqGAN
+from model_test import SeqGAN
 from data_loader import mscoco, mscoco_negative
 import pprint
 
@@ -52,7 +52,7 @@ FLAGS = flags.FLAGS
 pp = pprint.PrettyPrinter()
 
 def main(_):
-    pp.pprint(flags.FLAGS.__flags)
+    # pp.pprint(flags.FLAGS.__flags)
 
     if not os.path.exists(FLAGS.checkpoint_dir):
         os.makedirs(FLAGS.checkpoint_dir)
@@ -80,7 +80,7 @@ def main(_):
             D_pretrained_model = D_pretrained(sess, dataset, negative_dataset, info, conf=FLAGS)
             D_pretrained_model.train()
         if FLAGS.is_train:
-            print('is_train:', FLAGS.is_train)
+            # print('is_train:', FLAGS.is_train)
             model = SeqGAN(sess, dataset, info, conf=FLAGS)
             model.test(FLAGS.topic, FLAGS.tendency, FLAGS.themes, FLAGS.caption_nums)
         print('Session End......')

@@ -266,8 +266,8 @@ class mscoco():
             else:
                 print 'themes: %s not in'%word
 
-        print u'themes:', themes
-        print u'themes index:', themes_ix
+        # print u'themes:', themes
+        # print u'themes index:', themes_ix
         caption_nums = int(caption_nums)
         image_feature = np.zeros([caption_nums, self.max_themes])
         for ind in range(caption_nums):
@@ -277,7 +277,7 @@ class mscoco():
             if themes_ix:
                 image_feature[ind, 2:theme_randint+2] = np.random.choice(themes_ix, theme_randint, replace=False)
 
-        print 'img_feat:', image_feature
+        # print 'img_feat:', image_feature
         return image_feature
 
     # mscoco

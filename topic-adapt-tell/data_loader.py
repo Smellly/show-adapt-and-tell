@@ -258,7 +258,7 @@ class mscoco():
         else:
             print 'we get wrong tendency:', uni
             return None 
-        themes_l = themes.split()
+        themes_l = themes.split('_')
         themes_ix = []
         for word in themes_l:
             if word.decode('utf8') in self.word2ix:
@@ -266,6 +266,8 @@ class mscoco():
             else:
                 print 'themes: %s not in'%word
 
+        print u'themes:', themes
+        print u'themes index:', themes_ix
         caption_nums = int(caption_nums)
         image_feature = np.zeros([caption_nums, self.max_themes])
         for ind in range(caption_nums):
@@ -275,6 +277,7 @@ class mscoco():
             if themes_ix:
                 image_feature[ind, 2:theme_randint+2] = np.random.choice(themes_ix, theme_randint, replace=False)
 
+        print 'img_feat:', image_feature
         return image_feature
 
     # mscoco

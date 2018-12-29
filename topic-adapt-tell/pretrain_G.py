@@ -16,14 +16,14 @@ class G_pretrained():
         self.LENGTH = 20
         self.sess = sess
         self.batch_size = conf.batch_size
-        self.max_iter = conf.max_iter
+        self.max_epoch = conf.max_epoch
         self.num_train = dataset.num_train
         self.hidden_size = conf.G_hidden_size   # 512
         self.dict_size = dataset.dict_size
         self.max_words = dataset.max_words
         self.dataset = dataset
         self.load_ckpt = conf.load_ckpt
-        self.is_train = conf.is_train
+        self.is_train = conf.G_is_pretrain
         if self.is_train:
             self.drop_out_rate = conf.drop_out_rate
         else:
@@ -239,9 +239,12 @@ class G_pretrained():
         self.current_lr = self.init_lr
         self.current_ss = 0.
         self.tr_count = 0
-        for idx in range(self.max_iter//3000):
+        # 1 epoch = batch_size * iterion_per_epoch
+        # why 3000 ?
+        # for idx in range(self.max_iter//3000):
+        for idx in range(self.max_epoch):
             print "Epoch : %d"%(idx)
-            print "Iter  : %d"%(self.tr_count)
+            print "Iters : %d"%(self.tr_count)
             print "### Evaluate source test set..."
             self.evaluate('test', self.tr_count)
             print "### Evaluate target test set..."
@@ -251,10 +254,10 @@ class G_pretrained():
             print "### Evaluate train sample"
             self.evaluate('train', self.tr_count, eval_algo='sample')
             self.save(self.checkpoint_dir, self.tr_count)
-            for k in tqdm(range(3000)):
+            for k in tqdm(range(self.num_train // self.batch_size)):
                 # tgt_text = self.dataset.flickr_caption_sequential_sample(self.batch_size)
                 image_feature, target, img_idx = self.dataset.sequential_sample(self.batch_size)
-#               dummy_feature = np.zeros(image_feature.shape)
+                # dummy_feature = np.zeros(image_feature.shape)
                 nonENDs = np.array(map(lambda x: (x != self.NOT).sum(), target))
                 mask = np.zeros([self.batch_size, self.max_words])
                 tgt_mask = np.zeros([self.batch_size, self.max_words])

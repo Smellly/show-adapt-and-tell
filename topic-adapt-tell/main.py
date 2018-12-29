@@ -16,10 +16,10 @@ flags.DEFINE_float("learning_rate", 1e-4, "Learning rate of for adam [0.0003]")
 flags.DEFINE_float("drop_out_rate", 0.3, "Drop out rate fro LSTM")
 flags.DEFINE_float("discount", 0.95, "discount factor in RL")
 flags.DEFINE_string("model_name", "cub_no_scheduled", "")
-flags.DEFINE_integer("batch_size", 20, "The size of batch images [64]") # 128:G, 32:D
+flags.DEFINE_integer("batch_size", 64, "The size of batch images [64]") # 128:G, 32:D
 flags.DEFINE_integer("G_hidden_size", 512, "")          # 512:G, 64:D
 flags.DEFINE_integer("D_hidden_size", 512, "")
-flags.DEFINE_integer("max_iter", 100000, "")
+flags.DEFINE_integer("max_epoch", 60, "")
 flags.DEFINE_integer('max_to_keep', 40, '')
 flags.DEFINE_integer('rollout_num', 3, '')
 flags.DEFINE_string("method", "ROUGE_L", "")
@@ -64,9 +64,8 @@ def main(_):
                         'num_filters_total':num_filters_total, 'l2_reg_lambda':0.2}
         if FLAGS.G_is_pretrain:
             G_pretrained_model = G_pretrained(sess, dataset, conf=FLAGS)
-            if FLAGS.is_train:
-                print('G_pretrained_model train')
-                G_pretrained_model.train()
+            print('G_pretrained_model train')
+            G_pretrained_model.train()
             print('G_pretrained_model evaluate')
             G_pretrained_model.evaluate('test', 0)
         if FLAGS.D_is_pretrain:

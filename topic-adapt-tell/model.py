@@ -34,7 +34,7 @@ class SeqGAN():
 	self.sess = sess
 	self.model_name = conf.model_name
         self.batch_size = conf.batch_size
-        self.max_iter = conf.max_iter
+        self.max_epoch = conf.max_epoch
 	self.max_to_keep = conf.max_to_keep
 	self.is_train = conf.is_train
 	# Testing => dropout rate is 0
@@ -43,7 +43,7 @@ class SeqGAN():
 	else:
 	    self.drop_out_rate = 0
 
-	self.num_train = dataset.num_train
+	self.num_train = dataset.num_train              # mscoco
         self.G_hidden_size = conf.G_hidden_size     	# 512
 	self.D_hidden_size = conf.D_hidden_size		# 512
         self.dict_size = dataset.dict_size
@@ -942,8 +942,8 @@ class SeqGAN():
 	count = 0
 	D_count = 0
 	G_count = 0
-        freq_to_eval = 200
-	for idx in range(self.max_iter//freq_to_eval):
+        freq_to_eval = self.num_train // self.batch_size
+	for idx in range(self.max_epoch):
             self.save(self.checkpoint_dir, count)
             print "Epoch    : %d"%(idx)
             print "Iter     : %d"%(count)
@@ -1047,7 +1047,7 @@ class SeqGAN():
         samples = np.asarray(samples)
         samples_index = np.asarray(samples_index)
         output = []
-        for ii in range(200):
+        for ii in range(5):
             tmp = u''
             for i in image_feature[ii, :]:
                 tmp += self.dataset.ix2word[str(int(i))] + u' '
@@ -1074,7 +1074,7 @@ class SeqGAN():
         newtime = datetime.datetime.now()
         print 'TIME:', newtime
         print 'lap:', (newtime-oldtime).seconds
-        print 'speed: %f second per tweet'%(shint((newtime-oldtime).seconds)/num_samples)
+        print 'speed: %f second per tweet'%(int((newtime-oldtime).seconds)/num_samples)
         if score_verbose:
             scorer = COCOEvalCap(test_annotation, meteor_pd, meteor_id)
             # scorer.evaluate(verbose=True)

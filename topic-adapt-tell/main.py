@@ -13,13 +13,13 @@ import pdb
 flags = tf.app.flags
 flags.DEFINE_integer("epoch", 100, "Epoch to train [100]")
 flags.DEFINE_float("learning_rate", 1e-4, "Learning rate of for adam [0.0003]")
-flags.DEFINE_float("drop_out_rate", 0.3, "Drop out rate fro LSTM")
+flags.DEFINE_float("drop_out_rate", 0.4, "Drop out rate fro LSTM")
 flags.DEFINE_float("discount", 0.95, "discount factor in RL")
 flags.DEFINE_string("model_name", "cub_no_scheduled", "")
 flags.DEFINE_integer("batch_size", 64, "The size of batch images [64]") # 128:G, 32:D
 flags.DEFINE_integer("G_hidden_size", 512, "")          # 512:G, 64:D
 flags.DEFINE_integer("D_hidden_size", 512, "")
-flags.DEFINE_integer("max_epoch", 60, "")
+flags.DEFINE_integer("max_epoch", 120, "")
 flags.DEFINE_integer('max_to_keep', 40, '')
 flags.DEFINE_integer('rollout_num', 3, '')
 flags.DEFINE_string("method", "ROUGE_L", "")
@@ -37,10 +37,10 @@ flags.DEFINE_boolean("is_train", True, "True for training, False for testing [Fa
 # Setting from Self-critical Sequence Training for Image Captioning
 tf.app.flags.DEFINE_float('init_lr', 1e-4, '')  # follow IBM's paper
 tf.app.flags.DEFINE_float('lr_decay', 0.8, 'learning rate decay factor')
-tf.app.flags.DEFINE_float('lr_decay_every', 6600, 'every 3 epoch 3*2200')
+tf.app.flags.DEFINE_float('lr_decay_every_epoch', 3, 'every 3 epoch 3*2200')
 # ss -> schedule sampling
 tf.app.flags.DEFINE_float('ss_ascent', 0.05, 'schedule sampling')
-tf.app.flags.DEFINE_float('ss_ascent_every', 11000, 'every 5 epoch 5*2200')
+tf.app.flags.DEFINE_float('ss_ascent_every_epoch', 5, 'every 5 epoch 5*2200')
 tf.app.flags.DEFINE_float('ss_max', 0.25, '0.05*5=0.25')
 
 FLAGS = flags.FLAGS

@@ -31,9 +31,9 @@ class G_pretrained():
 
         self.init_lr = conf.init_lr
         self.lr_decay = conf.lr_decay
-        self.lr_decay_every = conf.lr_decay_every
+        self.lr_decay_every = conf.lr_decay_every_epoch * self.num_train
         self.ss_ascent = conf.ss_ascent
-        self.ss_ascent_every = conf.ss_ascent_every
+        self.ss_ascent_every = conf.ss_ascent_every_epoch * self.num_train
         self.ss_max = conf.ss_max
         # train pretrained model -> no need to add START_TOKEN
         #                        -> need to add END_TOKEN

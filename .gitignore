@@ -10,17 +10,24 @@
 
 *.swp
 
-logs
+*.txt
+
+logs*
 
 checkpoint*
 
 # some data
+data-prepro/MSCOCO_preprocess/deep-residual-networks
+data-prepro/MSCOCO_preprocess/neuraltalk2
 data-prepro/MSCOCO_preprocess/resnet_model
 data-prepro/MSCOCO_preprocess/mscoco_data
 data-prepro/MSCOCO_preprocess/cub_data
 data-prepro/MSCOCO_preprocess/annotations
-data-prepro/topic/
-topic-adapt-tell/coco_spice
 data-prepro/CUB200_preprocess
+data-prepro/topic/
+
+show-adapt-tell/coco_spice
+
+topic-adapt-tell/coco_spice
 topic-adapt-tell/results*
 topic-adapt-tell/log*

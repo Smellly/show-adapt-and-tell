@@ -9,17 +9,19 @@
 
 # for pretrain G
 # set G_is_pretrain True
-# CUDA_VISIBLE_DEVICES=0 \
-#     python2 -u main.py \
-#         --G_is_pretrain True \
-#         --is_train False > checkpoint_m/mscoco_20190201.log 2&>1
+CUDA_VISIBLE_DEVICES=1 \
+    python2 -u main.py \
+        --G_is_pretrain True \
+        --max_epoch 200 \
+        --is_train False > logs_m/mscoco_20190108_ori.log 2&>1
+        # --load_cpkt ./checkpoint_m/mscoco/G_pretrained/G_pretrained-139384 \
 
 # for rl training
 # set G_is_pretrain False
-CUDA_VISIBLE_DEVICES=0 python2 -u main.py \
-        --G_is_pretrain False \
-        --load_ckpt ./checkpoint_m/mscoco_20181229/G_pretrained/G_pretrained-60770 \
-        --is_train True > logs_m/log20190102.log 2&>1
+# CUDA_VISIBLE_DEVICES=1 python2 -u main.py \
+#         --G_is_pretrain False \
+#         --load_ckpt ./checkpoint_m/mscoco_20190102/G_pretrained/G_pretrained-138336 \
+#         --is_train True > logs_m/log20190108.log 2&>1
 
 # for test
 # date
